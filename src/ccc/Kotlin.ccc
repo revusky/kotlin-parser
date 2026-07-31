@@ -1,14 +1,377 @@
 DEFAULT_LEXICAL_STATE=KOTLIN;
-DEACTIVATE_TOKENS=SHEBANG;
+DEACTIVATE_TOKENS = SHEBANG, NL;
 TAB_SIZE=4;
 ENSURE_FINAL_EOL;
 
 INCLUDE "KotlinLexer.ccc"
 
 Root :
-  ACTIVATE_TOKENS SHEBANG [ShebangLine]
+  ACTIVATE_TOKENS SHEBANG NL [ShebangLine]
   <EOF>
 ;
 
-ShebangLine : <SHEBANG> (<NL>)+ ;
+ShebangLine : <SHEBANG> <NL> ;
 
+FileAnnotation :
+   "@"
+   ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
+   =>||
+   'file' ":"
+    (
+        "[" (UnescapedAnnotation)+ "]"
+        |
+        UnescapedAnnotation
+    )
+;
+
+UnescapedAnnotation : ConstructorInvocation | UserType ;
+
+ConstructorInvocation : UserType ValueArguments;
+
+UserType : SimpleUserType ("." SimpleUserType)* ;
+
+SimpleUserType : <IDENTIFIER> [TypeArguments] ;
+
+ValueArguments :
+   "("
+   [
+      ValueArgument
+      ("," =>|+1 ValueArgument)* [","]
+   ]
+   ")"
+;
+
+ValueArgument :
+   [Annotation]
+   [<IDENTIFIER> "="]
+   ["*"]
+   Expression
+;
+
+TypeArguments :
+   "<"
+   TypeProjection
+   ("," =>|+1 TypeProjection) [","]
+   ">"
+;
+
+TypeProjection :
+    "*"
+    |
+    [TypeProjectionModifiers] Type
+;
+
+TypeProjectionModifiers :
+   ("in" | 'out' | Annotation)*
+;
+
+Annotation :
+   (
+    AnnotationUseSiteTarget
+    |
+    "@"
+    ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))} =>||
+   )
+   (
+      UnescapedAnnotation
+      |
+      "[" (UnescapedAnnotation)+ "]"
+   )
+;
+
+AnnotationUseSiteTarget :
+    "@"
+    ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
+    ('field' | 'property' | 'get' | 'set' | 'receiver' | 'param' | 'setparam' | 'delegate')
+    =>||
+    ":"
+;
+
+Type :
+   [TypeModifiers]
+   (
+     FunctionType
+     |
+     ParenthesizedType
+     |
+     NullableType
+     |
+     TypeReference
+     |
+     DefinitelyNullableType
+   )
+;
+
+TypeModifiers :
+   ('suspend' | Annotation)+
+;
+
+ParenthesizedType : "(" Type ")" ;
+
+FunctionType :
+   [ReceiverType "." =>||]
+   FunctionTypeParameters
+   "->"
+   Type
+;
+
+ReceiverType :
+   [TypeModifiers]
+   (
+     ParenthesizedType | NullableType | TypeReference
+   )
+;
+
+NullableType :
+   (TypeReference | ParenthesizedType)
+   ("?")+
+;
+
+TypeReference : 'dynamic' | UserType ;
+
+DefinitelyNullableType :
+   [TypeModifiers]
+   (UserType | ParenthesizedUserType)
+   "&"
+   [TypeModifiers]
+   (UserType | ParenthesizedUserType)
+;
+
+ParenthesizedUserType : "(" (UserType | ParenthesizedUserType) ")" ;
+
+FunctionTypeParameters :
+    "("
+    [Parameter|Type]
+    ("," =>|+1 (Parameter | Type))*
+    [","]
+    ")"
+;
+
+Parameter : <IDENTIFIER> ":" Type ;
+
+#Expression#interface :
+   Disjunction
+   {return peekNode();}
+;
+
+Disjunction : Conjunction ("||" Conjunction)* ;
+
+Conjunction : Equality ("&&" Equality)* ;
+
+Equality : Comparison (EqualityOperator Comparison)* ;
+
+Comparison : GenericCallLikeComparison (ComparisonOperator GenericCallLikeComparison)* ;
+
+GenericCallLikeComparison : InfixOperation (CallSuffix)* ;
+
+InfixOperation : ElvisExpression : ((InOperator ElvisExpression) | IsOperator Type)* ;
+
+ElvisExpression : InfixFunctionCall ("?:" InfixFunctionCall)* ;
+
+InfixFunctionCall : RangeExpression (<IDENTIFIER> RangeExpression)* ;
+
+RangeExpression : AdditiveExpression ((".." | "..<") AdditiveExpression)* ;
+
+AdditiveExpression : MultiplicativeExpression (("+"|"-") MultiplicativeExpression)* ;
+
+MultiplicativeExpression : AsExpression (("*"|"/"|"%") AsExpression)* ;
+
+AsExpression : PrefixUnaryExpression ("as" Type)* ;
+
+PrefixUnaryExpression : (UnaryPrefix)* PostfixUnaryExpression ;
+
+UnaryPrefix#void : Annotation | Label | PrefixUnaryOperator ;
+
+PrefixUnaryOperator#void : "++" | "--" | "-" | "+" | "!" ;
+
+PostfixUnaryExpression : PrimaryExpression (PostfixUnarySuffix)* ;
+
+EqualityOperator#void : "!=" | "!==" | "==" | "===" ;
+
+ComparisonOperator#void : "<" | "<=" | ">=" | ">" ;
+
+// TODO: Need a token lexical action to deal with NOT_IN and NOT_IS
+InOperator#void : "in" | "!in" ;
+
+IsOperator#void : "is" | "!is";
+
+Label : <IDENTIFIER>ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() } "@" =>|| ;
+
+PostfixUnarySuffix#void : PostfixUnaryOperator | TypeArguments | CallSuffix | IndexingSuffix | NavigationSuffix ;
+
+PostfixUnaryOperator#void : "++" | "--" | "!" ;
+
+NavigationSuffix : MemberAccessOperator (<IDENTIFIER> | <ParenthesizedExpression> | "class") ;
+
+IndexingSuffix : "[" Expression ("," =>|+1 Expression)* [","] "]" ;
+
+CallSuffix :
+    [TypeArguments]
+    (
+        AnnotatedLambda
+        |
+        ValueArguments [AnnotatedLambda]
+    )
+;
+
+MemberAccessOperator :
+   "."
+   |
+   "::"
+   |
+   "?"
+   ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
+   "."
+   =>||
+;
+
+AnnotatedLambda : (Annotation)* [Label] LambdaLiteral ;
+
+LambdaLiteral :
+    "{"
+    [
+        [LambdaParameters] "->"
+    ]
+    Statements
+    "}"
+;
+
+LambdaParameters :
+   LambdaParameter ("," =>|+1 LambdaParameter)* [","]
+;
+
+LambdaParameter :
+   VariableDeclaration
+   |
+   MultiVariableDeclaration [":" Type]
+;
+
+VariableDeclaration : (Annotation)* <IDENTIFIER> [":" Type] ;
+
+MultiVariableDeclaration :
+    "("
+    VariableDeclaration
+    ("," =>|+1 VariableDeclaration) [","]
+    ")"
+;
+
+Semis :
+   ACTIVATE_TOKENS NL
+    (";" | <NL>)+
+;
+
+Statements :
+  [
+    Statement
+    (Semis =>|+1 Statement)*
+    [Semis]
+  ]
+;
+
+Statement :
+   (Label|Annotation)*
+   (
+    Declaration
+    |
+    Assignment
+    |
+    ForStatement
+    |
+    WhileStatement
+    |
+    DoWhileStatement
+    |
+    Expression
+   )
+;
+
+ForStatement :
+   "for"
+   "("
+   (Annotation)*
+   (VariableDeclaration|MultiVariableDeclaration)
+   "in"
+   Expression
+   ")"
+   [ControlStructureBody]
+;
+
+WhileStatement :
+    "while"
+    "("
+    Expression
+    ")"
+    (ControlStructureBody | ";")
+;
+
+DoWhileStatement :
+   "do"
+   [ControlStructureBody]
+   "while"
+   "("
+   Expression
+   ")"
+;
+
+ControlStructureBody : Block | Statement ;
+
+Block : "{" Statements "}" ;
+
+Declaration :
+    ClassDeclaration
+    |
+    ObjectDeclaration
+    |
+    FunctionDeclaration
+    |
+    PropertyDeclaration
+    |
+    TypeAlias
+;
+
+ClassDeclaration :
+   [Modifiers]
+   (
+      "class"
+      |
+      ["fun"] "interface" =>||
+   )
+   =>||
+   <IDENTIFIER>
+   [TypeParameters]
+   [PrimaryConstructor]
+   [":" DelegationSpecifiers]
+   [TypeConstraints]
+   (
+      ClassBody | EnumClassBody
+   )
+;
+
+TypeParameters :
+   "<"
+   TypeParameter
+   ("," =>|+1 TypeParameter) [","]
+   ">"
+;
+
+TypeParameter :
+   [TypeParameterModifiers]
+   <IDENTIFIER>
+   [":" Type]
+;
+
+TypeConstraints : 'where' TypeConstraint ("," TypeConstraint)* ;
+
+TypeConstraint : (Annotation)* <IDENTIFIER> ":" Type ;
+
+TypeParameterModifiers# : ('reified' | "in" | 'out' | Annotation)* ;
+
+ClassBody : "{" ClassMemberDeclarations "}" ;
+
+// TODO: Disambiguate this from a ClassBody?
+EnumClassBody : "{" [EnumEntries] [";" ClassMemberDeclarations]"}" ;
+
+// TODO: Deal with the lhs being assignable
+Assignment : Expression AssignmentOperator =>|| Expression ;
+
+AssignmentOperator#void : "=" | '+=' | '-=' | '*=' | '/=' | '%=' ;

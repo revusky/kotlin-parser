@@ -3,10 +3,12 @@ BASE_Name=Kotlin;
 
 TOKEN :
    <SHEBANG : "#!" (~["\n"])* >
+   |
+   <NL : "\n" | "\r\n" >
 ;
 
 SKIP :
-   <WS : " " | "\t" | "f">
+   <WS : " " | "\t" | "f" | "\n" | "\r">
 ;
 
 UNPARSED #Comment :
@@ -84,7 +86,7 @@ TOKEN #Operator :
 //   |
    <COLON : ":">
    |
-   <ASSIGNMENT : "=">
+   <ASSIGN : "=">
    |
    <ADD_ASSIGNMENT : "+=">
    |
@@ -298,6 +300,8 @@ CONTEXTUAL :
    <SUSPEND : "suspend">
    |
    <CONST : "const">
+   |
+   <VALUE : "value">
 ;
 
 INJECT NumericalLiteral : extends Literal
