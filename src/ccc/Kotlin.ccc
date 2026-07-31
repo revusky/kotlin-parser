@@ -5,10 +5,18 @@ ENSURE_FINAL_EOL;
 
 INCLUDE "KotlinLexer.ccc"
 
-Root :
+KotlinFile :
   ACTIVATE_TOKENS SHEBANG NL [ShebangLine]
+  (FileAnnotation)*
+  [PackageDeclaration]
+  (ImportDeclaration)*
+  (TopLevelObject)*
   <EOF>
 ;
+
+TopLevelObject : Declaration [Semis] ;
+
+DottedName : <IDENTIFIER> ("." <IDENTIFIER> =>||)* ;
 
 ShebangLine : <SHEBANG> <NL> ;
 
@@ -24,7 +32,20 @@ FileAnnotation :
     )
 ;
 
-UnescapedAnnotation : ConstructorInvocation | UserType ;
+PackageDeclaration : "package" <IDENTIFIER> Semis ;
+
+ImportDeclaration :
+    'import'
+    DottedName
+    [
+        "." "*"
+        |
+        "as" <IDENTIFIER>
+    ]
+    Semis
+;
+
+UnescapedAnnotation : UserType [ValueArguments #ConstructorInvocation(2)] ;
 
 ConstructorInvocation : UserType ValueArguments;
 
@@ -43,7 +64,7 @@ ValueArguments :
 
 ValueArgument :
    [Annotation]
-   [<IDENTIFIER> "="]
+   [<IDENTIFIER> "=" =>||]
    ["*"]
    Expression
 ;
@@ -51,14 +72,14 @@ ValueArgument :
 TypeArguments :
    "<"
    TypeProjection
-   ("," =>|+1 TypeProjection) [","]
+   ("," =>|+1 TypeProjection)* [","]
    ">"
 ;
 
 TypeProjection :
     "*"
     |
-    [TypeProjectionModifiers] Type
+    TypeProjectionModifiers Type
 ;
 
 TypeProjectionModifiers :
@@ -92,13 +113,9 @@ Type :
    (
      FunctionType
      |
-     ParenthesizedType
+     DefinitelyNullableType
      |
      NullableType
-     |
-     TypeReference
-     |
-     DefinitelyNullableType
    )
 ;
 
@@ -111,20 +128,18 @@ ParenthesizedType : "(" Type ")" ;
 FunctionType :
    [ReceiverType "." =>||]
    FunctionTypeParameters
-   "->"
+   "->" =>||
    Type
 ;
 
 ReceiverType :
    [TypeModifiers]
-   (
-     ParenthesizedType | NullableType | TypeReference
-   )
+   NullableType
 ;
 
 NullableType :
    (TypeReference | ParenthesizedType)
-   ("?")+
+   ("?")*
 ;
 
 TypeReference : 'dynamic' | UserType ;
@@ -132,7 +147,7 @@ TypeReference : 'dynamic' | UserType ;
 DefinitelyNullableType :
    [TypeModifiers]
    (UserType | ParenthesizedUserType)
-   "&"
+   "&" =>||
    [TypeModifiers]
    (UserType | ParenthesizedUserType)
 ;
@@ -147,12 +162,21 @@ FunctionTypeParameters :
     ")"
 ;
 
-Parameter : <IDENTIFIER> ":" Type ;
+Parameter : <IDENTIFIER> ":" =>|| Type ;
 
 #Expression#interface :
    Disjunction
-   {return peekNode();}
+   {return (Expression) peekNode();}
 ;
+
+INJECT Disjunction : implements Expression
+INJECT Conjunction : implements Expression
+INJECT Equality : implements Expression
+INJECT Comparison : implements Expression
+INJECT GenericCallLikeComparison : implements Expression
+INJECT InfixOperation : implements Expression
+INJECT ElvisExpression : implements Expression
+INJECT PostfixUnaryExpression : implements Expression
 
 Disjunction : Conjunction ("||" Conjunction)* ;
 
@@ -164,7 +188,7 @@ Comparison : GenericCallLikeComparison (ComparisonOperator GenericCallLikeCompar
 
 GenericCallLikeComparison : InfixOperation (CallSuffix)* ;
 
-InfixOperation : ElvisExpression : ((InOperator ElvisExpression) | IsOperator Type)* ;
+InfixOperation : ElvisExpression ((InOperator ElvisExpression) | IsOperator Type)* ;
 
 ElvisExpression : InfixFunctionCall ("?:" InfixFunctionCall)* ;
 
@@ -178,9 +202,12 @@ MultiplicativeExpression : AsExpression (("*"|"/"|"%") AsExpression)* ;
 
 AsExpression : PrefixUnaryExpression ("as" Type)* ;
 
-PrefixUnaryExpression : (UnaryPrefix)* PostfixUnaryExpression ;
+PrefixUnaryExpression :
+    (ENSURE {getTokenType(1) != IDENTIFIER || getTokenType(2) == AT_NO_WS} UnaryPrefix)*
+    PostfixUnaryExpression
+;
 
-UnaryPrefix#void : Annotation | Label | PrefixUnaryOperator ;
+UnaryPrefix#void : Annotation | PrefixUnaryOperator | Label ;
 
 PrefixUnaryOperator#void : "++" | "--" | "-" | "+" | "!" ;
 
@@ -195,18 +222,29 @@ InOperator#void : "in" | "!in" ;
 
 IsOperator#void : "is" | "!is";
 
-Label : <IDENTIFIER>ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() } "@" =>|| ;
+Label : <IDENTIFIER> ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() } "@" =>|| ;
 
-PostfixUnarySuffix#void : PostfixUnaryOperator | TypeArguments | CallSuffix | IndexingSuffix | NavigationSuffix ;
+PostfixUnarySuffix#void :
+    PostfixUnaryOperator
+    |
+    CallSuffix
+    |
+    TypeArguments
+    |
+    IndexingSuffix
+    |
+    NavigationSuffix
+;
 
 PostfixUnaryOperator#void : "++" | "--" | "!" ;
 
-NavigationSuffix : MemberAccessOperator (<IDENTIFIER> | <ParenthesizedExpression> | "class") ;
+NavigationSuffix : MemberAccessOperator (<IDENTIFIER> | ParenthesizedExpression | "class") ;
 
 IndexingSuffix : "[" Expression ("," =>|+1 Expression)* [","] "]" ;
 
 CallSuffix :
     [TypeArguments]
+    =>|+1
     (
         AnnotatedLambda
         |
@@ -251,7 +289,7 @@ VariableDeclaration : (Annotation)* <IDENTIFIER> [":" Type] ;
 MultiVariableDeclaration :
     "("
     VariableDeclaration
-    ("," =>|+1 VariableDeclaration) [","]
+    ("," =>|+1 VariableDeclaration)* [","]
     ")"
 ;
 
@@ -289,7 +327,7 @@ ForStatement :
    "for"
    "("
    (Annotation)*
-   (VariableDeclaration|MultiVariableDeclaration)
+   (MultiVariableDeclaration|VariableDeclaration)
    "in"
    Expression
    ")"
@@ -317,7 +355,14 @@ ControlStructureBody : Block | Statement ;
 
 Block : "{" Statements "}" ;
 
+DeclarationLA#scan :
+   [Modifiers]
+   ( "class" | "fun" | "interface" | "object" | "val" | "var" | "typealias")
+;
+
 Declaration :
+  SCAN DeclarationLA =>
+  (
     ClassDeclaration
     |
     ObjectDeclaration
@@ -327,6 +372,7 @@ Declaration :
     PropertyDeclaration
     |
     TypeAlias
+  )
 ;
 
 ClassDeclaration :
@@ -352,7 +398,7 @@ ClassDeclaration :
 
 ObjectDeclaration :
     [Modifiers]
-    "Object" =>||
+    "object" =>||
     <IDENTIFIER>
     ":"
     Type
@@ -362,7 +408,7 @@ FunctionDeclaration :
    [Modifiers]
    "fun" =>||
    [TypeParameters]
-   [ReceiverType "."]
+   [ReceiverType "." =>||]
    <IDENTIFIER>
    FunctionValueParameters
    [":" Type]
@@ -387,7 +433,7 @@ Modifier#void :
 ;
 
 TypeAlias :
-   [Modifiers] 'typealias' =>||
+   [Modifiers] "typealias" =>||
    <IDENTIFIER>
    [TypeParameters]
    "="
@@ -400,7 +446,7 @@ ClassParameters :
     "("
     [
         ClassParameter
-        ("," =>|+1 ClassParameter) [","]
+        ("," =>|+1 ClassParameter)* [","]
     ]
     ")"
 ;
@@ -417,8 +463,9 @@ ClassParameter :
 PropertyDeclaration :
   [Modifiers]
   ("val"|"var")
+  =>||
   [TypeParameters]
-  [ReceiverType "."]
+  [ReceiverType "." =>||]
   (MultiVariableDeclaration | VariableDeclaration)
   [TypeConstraints]
   [
@@ -461,12 +508,12 @@ Setter :
 TypeParameters :
    "<"
    TypeParameter
-   ("," =>|+1 TypeParameter) [","]
+   ("," =>|+1 TypeParameter)* [","]
    ">"
 ;
 
 TypeParameter :
-   [TypeParameterModifiers]
+   TypeParameterModifiers
    <IDENTIFIER>
    [":" Type]
 ;
@@ -485,7 +532,7 @@ EnumClassBody : "{" [EnumEntries] [";" ClassMemberDeclarations]"}" ;
 // TODO: Deal with the lhs being assignable
 Assignment : Expression AssignmentOperator =>|| Expression ;
 
-AssignmentOperator#void : "=" | '+=' | '-=' | '*=' | '/=' | '%=' ;
+AssignmentOperator#void : "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
 
 DelegationSpecifiers : AnnotatedDelegationSpecifier ("," AnnotatedDelegationSpecifier)* ;
 
@@ -507,7 +554,7 @@ PropertyDelegate : 'by' Expression ;
 
 ExplicitDelegation :
    (UserType | FunctionType)
-   'by'
+   'by' =>||
    Expression
 ;
 
@@ -530,7 +577,7 @@ CompanionObject :
     [Modifiers]
     'companion' =>||
     ['data']
-    'object'
+    "object"
     [<IDENTIFIER>]
     [":" DelegationSpecifiers]
     [ClassBody]
@@ -549,7 +596,7 @@ ConstructorDelegationCall : ("this"|"super") ValueArguments ;
 
 FunctionValueParameters :
    "("
-   [FunctionValueParameter ("," =>|+1 FunctionValueParameter) [","]]
+   [FunctionValueParameter ("," =>|+1 FunctionValueParameter)* [","]]
    ")"
 ;
 
@@ -571,13 +618,11 @@ FunctionValueParameterWithOptionalType :
 
 ParameterWithOptionalType : <IDENTIFIER> [":" Type] ;
 
-EnumEntries : EnumEntry ("," =>|+1 EnumEntry) [","] ;
+EnumEntries : EnumEntry ("," =>|+1 EnumEntry)* [","] ;
 
 EnumEntry : [Modifiers] <IDENTIFIER> [ValueArguments] [ClassBody] ;
 
 PrimaryExpression :
-   ParenthesizedExpression
-   |
    <IDENTIFIER>
    |
    LiteralConstant
@@ -586,7 +631,11 @@ PrimaryExpression :
    |
    CallableReference
    |
-   FunctionLiteral
+   ParenthesizedExpression
+   |
+   LambdaLiteral
+   |
+   AnonymousFunction
    |
    ObjectLiteral
    |
@@ -602,7 +651,13 @@ PrimaryExpression :
    |
    TryExpression
    |
-   JumpExpression
+   ThrowExpression
+   |
+   ReturnExpression
+   |
+   ContinueExpression
+   |
+   BreakExpression
 ;
 
 ParenthesizedExpression : "(" Expression ")" ;
@@ -614,5 +669,127 @@ LiteralConstant#void :
    <LONG_LITERAL> | <UNSIGNED_LITERAL>
 ;
 
-CallableReference : [ReceiverType] "::" (<IDENTIFIER> | "class") ;
+CallableReference : [ReceiverType] "::" =>|| (<IDENTIFIER> | "class") ;
+
+ObjectLiteral :
+   ['data']
+   "object"
+   [":" DelegationSpecifiers]
+   [ClassBody]
+;
+
+WhenExpression :
+   "when"
+   [WhenSubject]
+   "{"
+   (WhenEntry)*
+   "}"
+;
+
+WhenEntry :
+   WhenCondition ("," =>|+1 WhenCondition)* [","]
+   "->" ControlStructureBody [Semis]
+   |
+   "else" "->" ControlStructureBody [Semis]
+;
+
+WhenCondition :
+   Expression
+   |
+   RangeTest
+   |
+   TypeTest
+;
+
+TypeTest : IsOperator Type ;
+
+RangeTest : InOperator Expression ;
+
+WhenSubject :
+    "("
+       [
+         (Annotation)*
+         "val"
+         VariableDeclaration
+         "="
+       ]
+       Expression
+    ")"
+;
+
+ThisExpression : "this" | <THIS_AT> ;
+
+SuperExpression :
+    <SUPER_AT>
+    |
+    // TODO: Look at whitespace
+    "super" ["<" Type ">"] "@" <IDENTIFIER>
+;
+
+AnonymousFunction :
+   ['suspend']
+   "fun" =>||
+   [Type "."]
+   ParameterWithOptionalType
+   [":" Type]
+   [TypeConstraints]
+   [FunctionBody]
+;
+
+IfExpression :
+   "if"
+   "("
+   Expression
+   ")"
+   (ControlStructureBody | ";")
+   [
+      "else"
+      (ControlStructureBody | ";")
+   ]
+;
+
+CollectionLiteral :
+   "["
+   [
+        Expression
+        ("," =>|+1 Expression)*
+        [","]
+   ]
+   "]"
+;
+
+TryExpression :
+    {boolean hasCatch = false, hasFinally = false;}
+    "try" Block
+    (CatchBlock {hasCatch = true;})*
+    [FinallyBlock {hasFinally = true;}]
+    ASSERT {hasCatch | hasFinally : "There must be at least one catch or finally block."}
+;
+
+CatchBlock :
+   'catch'
+   "("
+   (Annotation)*
+   <IDENTIFIER>
+   ":"
+   Type
+   [","]
+   ")"
+   Block
+;
+
+FinallyBlock : 'finally' Block ;
+
+ThrowExpression : "throw" Expression ;
+
+ReturnExpression : <RETURN_AT> | "return" Expression ;
+
+ContinueExpression : <CONTINUE_AT> | "continue" ;
+
+BreakExpression : <BREAK_AT> | "break" ;
+
+// TODO: interpolations, etc.
+StringLiteral# : <STRING_LITERAL> ;
+
+INJECT StringLiteral : implements Expression
 

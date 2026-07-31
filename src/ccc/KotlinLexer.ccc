@@ -4,7 +4,7 @@ BASE_Name=Kotlin;
 TOKEN :
    <SHEBANG : "#!" (~["\n"])* >
    |
-   <NL : "\n" | "\r\n" >
+   <NL : "\n" | "\r\n" > #Newline
 ;
 
 SKIP :
@@ -24,13 +24,14 @@ MORE:
 <IN_DELIMITED_COMMENT>
 MORE:
    <ANY_CHAR : ~[]>
+   |
+   <START_NESTED_COMMENT: "/*"> {commentNesting++;}
 ;
 
 <IN_DELIMITED_COMMENT>
 UNPARSED :
    <DELIMITED_COMMENT : "*/">
    {
-      assert commentNesting >=0 : "Should be impossible!";
       if (commentNesting > 0) {
          commentNesting--;
          matchedToken = null;
@@ -152,6 +153,8 @@ TOKEN #Keyword :
    |
    <SUPER_AT : "super@"<IDENTIFIER>>
    |
+   <THIS_AT : "this@"<IDENTIFIER>>
+   |
    <PACKAGE : "package">
    |
    <CLASS : "class">
@@ -168,7 +171,7 @@ TOKEN #Keyword :
    |
    <TYPE_ALIAS : "typealias">
    |
-   <THIS : "this">
+   <_THIS : "this">
    |
    <SUPER : "super">
    |
@@ -324,7 +327,7 @@ TOKEN #Literal :
    <CHARACTER_LITERAL : "'" (<ESCAPE_SEQ>|~["\r","\n","'","\\"]) "'"> #CharacterLiteral
    |
    // TODO: This is a stopgap because we need to handle interpolations
-   <STRING_LITERAL : '"' (<ESCAPE_SEQ>|~["\r","\n",'"',"\\"]) '"'> #StringLiteral
+   <STRING_LITERAL : '"' (<ESCAPE_SEQ>|~["\r","\n",'"',"\\"])* '"'>
 ;
 
 TOKEN #NumericalLiteral :
@@ -363,8 +366,6 @@ TOKEN #NumericalLiteral :
    <LONG_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) "L">
 ;
 
-TOKEN : <NL : "\n"> #Newline ;
-
 INCLUDE JAVA_IDENTIFIER_DEF
 
 // TODO: backtick identifer
@@ -372,3 +373,4 @@ TOKEN #Identifier :
    <IDENTIFIER : <JAVA_IDENTIFIER_START> (<JAVA_IDENTIFIER_PART>)*>
 ;
 
+INJECT Identifier : implements Expression
