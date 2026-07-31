@@ -1,0 +1,38 @@
+DEFAULT_LEXICAL_STATE=KOTLIN;
+BASE_Name=Kotlin;
+
+TOKEN :
+   <SHEBANG : "#!" (~["\n"])* "\n">
+;
+
+UNPARSED #Comment :
+  < LINE_COMMENT : "//" (~["\n"])* > #LineComment
+;
+
+INJECT LEXER_CLASS : { private int commentStart, commentNesting; }
+
+MORE:
+   <COMMENT_START : "/*">  {commentStart = matchStart;} : IN_DELIMITED_COMMENT
+;
+
+<IN_DELIMITED_COMMENT>
+MORE:
+   <ANY_CHAR : ~[]>
+;
+
+<IN_DELIMITED_COMMENT>
+UNPARSED :
+   <DELIMITED_COMMENT : "*/">
+   {
+      assert commentNesting >=0 : "Should be impossible!";
+      if (commentNesting > 0) {
+         commentNesting--;
+         matchedToken = null;
+      }
+      else {
+         matchedToken.setBeginOffset(commentStart);
+         switchTo(LexicalState.KOTLIN);
+      }
+   }
+;
+
