@@ -330,7 +330,8 @@ Declaration :
 ;
 
 ClassDeclaration :
-   [Modifiers]
+   {boolean isEnum = false;}
+   [Modifiers {isEnum = peekNode().firstChildOfType(TokenType.ENUM)!= null;}]
    (
       "class"
       |
@@ -343,8 +344,118 @@ ClassDeclaration :
    [":" DelegationSpecifiers]
    [TypeConstraints]
    (
-      ClassBody | EnumClassBody
+      SCAN 0 {isEnum} => EnumClassBody
+      |
+      ClassBody
    )
+;
+
+ObjectDeclaration :
+    [Modifiers]
+    "Object" =>||
+    <IDENTIFIER>
+    ":"
+    Type
+;
+
+FunctionDeclaration :
+   [Modifiers]
+   "fun" =>||
+   [TypeParameters]
+   [ReceiverType "."]
+   <IDENTIFIER>
+   FunctionValueParameters
+   [":" Type]
+   [TypeConstraints]
+   [FunctionBody]
+;
+
+FunctionBody : Block | "=" Expression ;
+
+Modifiers# :
+   Annotation
+   |
+   Modifier (Annotation|Modifier)*
+;
+
+Modifier#void :
+   'enum' | 'sealed' | 'annotation' | 'data' | 'inner' | 'value' |
+   'override' | 'lateinit' | 'public' | 'private' | 'internal' | 'protected' |
+   'tailrec' | 'operator' | 'infix' | 'inline' | 'external' | 'suspend' |
+   'const' | 'abstract' | 'final' | 'open' | 'vararg' | 'noinline' | 'crossinline' |
+   'expect' | 'actual'
+;
+
+TypeAlias :
+   [Modifiers] 'typealias' =>||
+   <IDENTIFIER>
+   [TypeParameters]
+   "="
+   Type
+;
+
+PrimaryConstructor : [Modifiers] 'constructor' ClassParameters ;
+
+ClassParameters :
+    "("
+    [
+        ClassParameter
+        ("," =>|+1 ClassParameter) [","]
+    ]
+    ")"
+;
+
+ClassParameter :
+   [Modifiers]
+   ["val"|"var"]
+   <IDENTIFIER>
+   ":"
+   Type
+   ["=" Expression]
+;
+
+PropertyDeclaration :
+  [Modifiers]
+  ("val"|"var")
+  [TypeParameters]
+  [ReceiverType "."]
+  (MultiVariableDeclaration | VariableDeclaration)
+  [TypeConstraints]
+  [
+    "=" Expression
+    |
+    PropertyDelegate
+  ]
+  [","]
+  (
+    [
+        Getter [[Semis] Setter]
+        |
+        Setter [[Semis] Getter]
+    ]
+  )
+;
+
+Getter :
+   [Modifiers]
+   'get' =>||
+   [
+      "(" ")"
+      [":" Type]
+      FunctionBody
+   ]
+;
+
+Setter :
+   [Modifiers]
+   'set' =>||
+   [
+      "("
+      FunctionValueParameterWithOptionalType [","]
+      ")"
+      [":" Type]
+      FunctionBody
+   ]
 ;
 
 TypeParameters :
@@ -375,3 +486,133 @@ EnumClassBody : "{" [EnumEntries] [";" ClassMemberDeclarations]"}" ;
 Assignment : Expression AssignmentOperator =>|| Expression ;
 
 AssignmentOperator#void : "=" | '+=' | '-=' | '*=' | '/=' | '%=' ;
+
+DelegationSpecifiers : AnnotatedDelegationSpecifier ("," AnnotatedDelegationSpecifier)* ;
+
+AnnotatedDelegationSpecifier : (Annotation)* DelegationSpecifier ;
+
+DelegationSpecifier :
+   ConstructorInvocation
+   |
+   ExplicitDelegation
+   |
+   UserType
+   |
+   FunctionType
+   |
+   'suspend' FunctionType
+;
+
+PropertyDelegate : 'by' Expression ;
+
+ExplicitDelegation :
+   (UserType | FunctionType)
+   'by'
+   Expression
+;
+
+ClassMemberDeclarations : (ClassMemberDeclaration [Semis])* ;
+
+ClassMemberDeclaration :
+   Declaration
+   |
+   CompanionObject
+   |
+   AnonymousInitializer
+   |
+   SecondaryConstructor
+;
+
+
+AnonymousInitializer : 'init' Block ;
+
+CompanionObject :
+    [Modifiers]
+    'companion' =>||
+    ['data']
+    'object'
+    [<IDENTIFIER>]
+    [":" DelegationSpecifiers]
+    [ClassBody]
+;
+
+
+SecondaryConstructor :
+   [Modifiers]
+   'constructor' =>||
+   FunctionValueParameters
+   [":" ConstructorDelegationCall]
+   [Block]
+;
+
+ConstructorDelegationCall : ("this"|"super") ValueArguments ;
+
+FunctionValueParameters :
+   "("
+   [FunctionValueParameter ("," =>|+1 FunctionValueParameter) [","]]
+   ")"
+;
+
+FunctionValueParameter : [ParameterModifiers] Parameter ["=" Expression] ;
+
+ParameterModifiers :
+    Annotation
+    |
+    ParameterModifier (Annotation|ParameterModifier)*
+;
+
+ParameterModifier#void : 'vararg' | 'noinline' | 'crossinline' ;
+
+FunctionValueParameterWithOptionalType :
+   [ParameterModifiers]
+   ParameterWithOptionalType
+   ["=" Expression]
+;
+
+ParameterWithOptionalType : <IDENTIFIER> [":" Type] ;
+
+EnumEntries : EnumEntry ("," =>|+1 EnumEntry) [","] ;
+
+EnumEntry : [Modifiers] <IDENTIFIER> [ValueArguments] [ClassBody] ;
+
+PrimaryExpression :
+   ParenthesizedExpression
+   |
+   <IDENTIFIER>
+   |
+   LiteralConstant
+   |
+   StringLiteral
+   |
+   CallableReference
+   |
+   FunctionLiteral
+   |
+   ObjectLiteral
+   |
+   CollectionLiteral
+   |
+   ThisExpression
+   |
+   SuperExpression
+   |
+   IfExpression
+   |
+   WhenExpression
+   |
+   TryExpression
+   |
+   JumpExpression
+;
+
+ParenthesizedExpression : "(" Expression ")" ;
+
+LiteralConstant#void :
+   "true" | "false" | "null" |
+   <INTEGER_LITERAL> | <HEX_LITERAL> | <BIN_LITERAL> |
+   <CHARACTER_LITERAL> | <FLOAT_LITERAL> | <DOUBLE_LITERAL> |
+   <LONG_LITERAL> | <UNSIGNED_LITERAL>
+;
+
+CallableReference : [ReceiverType] "::" (<IDENTIFIER> | "class") ;
+
