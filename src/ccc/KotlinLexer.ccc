@@ -5,6 +5,10 @@ TOKEN :
    <SHEBANG : "#!" (~["\n"])* "\n">
 ;
 
+SKIP :
+   <WS : " " | "\t" | "f">
+;
+
 UNPARSED #Comment :
   < LINE_COMMENT : "//" (~["\n"])* > #LineComment
 ;
@@ -34,5 +38,326 @@ UNPARSED :
          switchTo(LexicalState.KOTLIN);
       }
    }
+;
+
+TOKEN #Operator :
+   <ELLIPSIS : "...">
+   |
+   <DOT : ".">
+   |
+   <COMMA : ",">
+   |
+   <LPAREN : "(" >
+   |
+   <RPAREN : ")" >
+   |
+   <LSQUARE : "[">
+   |
+   <RSQUARE : "]">
+   |
+   <LCURL : "{">
+   |
+   <RCURL : "}" >
+   |
+   <MULT : "*">
+   |
+   <MOD : "%">
+   |
+   <DIV : "/">
+   |
+   <ADD : "+">
+   |
+   <SUB : "-">
+   |
+   <INCR : "++">
+   |
+   <DECR : "--">
+   |
+   <CONJ : "&&">
+   |
+   <DISJ : "||">
+   |
+   <EXCL_WS : "!">
+   |
+   <EXCL_NO_WS : "!" >
+   |
+   <COLON : ":">
+   |
+   <ASSIGNMENT : "=">
+   |
+   <ADD_ASSIGNMENT : "+=">
+   |
+   <SUB_ASSIGNMENT : "-=">
+   |
+   <MULT_ASSIGNMENT : "*=">
+   |
+   <DIV_ASSIGNMENT : "/=">
+   |
+   <MOD_ASSIGNMENT : "%=">
+   |
+   <ARROW : "->">
+   |
+   <DOUBLE_ARROW : "=>">
+   |
+   <RANGE : "..">
+   |
+   <COLON_COLON : "::">
+   |
+   <DOUBLE_SEMICOLON : ";;">
+   |
+   <HASH : "#">
+   |
+   // TODO figure these arobas out later.
+   <AT_NO_WS : "@">
+   |
+   <AT_POST_WS : "@">
+   |
+   <AT_PRE_WS : "@">
+   |
+   <AT_BOTH_WS : "@">
+   |
+   <QUEST_NO_WS : "?">
+   |
+   <QUEST_WS : "?" >
+   |
+   <LANGLE : "<">
+   |
+   <RANGLE : ">">
+   |
+   <LE : "<=">
+   |
+   <GE : ">=">
+   |
+   <EXCL_EQ : "!=">
+   |
+   <EXCL_EQ_EQ : "!==">
+   |
+   <AS_SAFE : "as?">
+   |
+   <EQ_EQ : "==">
+   |
+   <SINGLE_QUOTE : "'">
+;
+
+TOKEN #Keyword :
+   <RETURN_AT : "return@"<IDENTIFIER>>
+   |
+   <CONTINUE_AT : "continue@"<IDENTIFIER>>
+   |
+   <BREAK_AT : "break@"<IDENTIFIER>>
+   |
+   <SUPER_AT : "super@"<IDENTIFIER>>
+   |
+   <FILE : "file">
+   |
+   <FIELD : "field">
+   |
+   <PROPERTY : "property">
+   |
+   <GET : "get">
+   |
+   <SET : "set">
+   |
+   <RECEIVER : "receiver">
+   |
+   <PARAM : "param">
+   |
+   <SETPARAM : "setparam">
+   |
+   <DELEGATE : "delegate">
+   |
+   <PACKAGE : "package">
+   |
+   <IMPORT : "import">
+   |
+   <CLASS : "class">
+   |
+   <INTERFACE : "interface">
+   |
+   <FUN : "fun">
+   |
+   <OBJECT : "object">
+   |
+   <VAL : "val">
+   |
+   <VAR : "var">
+   |
+   <TYPE_ALIAS : "typealias">
+   |
+   <CONSTRUCTOR : "constructor">
+   |
+   <BY : "by">
+   |
+   <COMPANION : "companion">
+   |
+   <INIT : "init">
+   |
+   <THIS : "this">
+   |
+   <SUPER : "super">
+   |
+   <TYPEOF : "typeof">
+   |
+   <WHERE : "where">
+   |
+   <IF : "if">
+   |
+   <ELSE : "else">
+   |
+   <WHEN : "when">
+   |
+   <TRY : "try">
+   |
+   <CATCH : "catch">
+   |
+   <FINALLY : "finally">
+   |
+   <FOR : "for">
+   |
+   <DO : "do">
+   |
+   <WHILE : "while">
+   |
+   <THROW : "throw">
+   |
+   <RETURN : "return">
+   |
+   <CONTINUE : "continue">
+   |
+   <BREAK : "break">
+   |
+   <AS : "as">
+   |
+   <IS : "is">
+   |
+   <IN : "in">
+   |
+   // TODO: next two must have WS after it.
+   <NOT_IS : "!is">
+   |
+   <NOT_IN : "!in">
+   |
+   <OUT : "out">
+   |
+   <DYNAMIC : "dynamic">
+   |
+   <PUBLIC : "public">
+   |
+   <PRIVATE : "private">
+   |
+   <PROTECTED : "protected">
+   |
+   <INTERNAL : "internal">
+   |
+   <ENUM : "enum">
+   |
+   <SEALED : "sealed">
+   |
+   <ANNOTATION : "annotation">
+   |
+   <DATA : "data">
+   |
+   <INNER : "inner">
+   |
+   <TAILREC : "tailrec">
+   |
+   <OPERATOR : "operator">
+   |
+   <INLINE : "inline">
+   |
+   <INFIX : "infix">
+   |
+   <EXTERNAL : "external">
+   |
+   <SUSPEND : "suspend">
+   |
+   <OVERRIDE : "override">
+   |
+   <ABSTRACT : "abstract">
+   |
+   <FINAL : "final">
+   |
+   <OPEN : "open">
+   |
+   <CONST : "const">
+   |
+   <LATEINIT : "lateinit">
+   |
+   <VARARG : "vararg">
+   |
+   <NOINLINE : "noinline">
+   |
+   <CROSSINLINE : "crossinline">
+   |
+   <REIFIED : "reified">
+   |
+   <EXPECT : "expect">
+   |
+   <ACTUAL : "actual">
+;
+
+INJECT NumericalLiteral : extends Literal
+
+TOKEN #Literal :
+   <TRUE : "true"> #BooleanLiteral
+   |
+   <FALSE : "false"> #BooleanLiteral
+   |
+   <NULL : "null" > #NullLiteral
+;
+
+TOKEN #Literal :
+   <#UNICODE_ESCAPE : "\\" "u" (<HEX_DIGIT>){4}>
+   |
+   <#CHAR_ESCAPE : "\\" ("t" | "b" | "r" | "n" | "'" | '"' | "\\" | "$")>
+   |
+   <#ESCAPE_SEQ : <UNICODE_ESCAPE>|<CHAR_ESCAPE>>
+   |
+   <CHARACTER_LITERAL : "'" (<ESCAPE_SEQ>|~["\r","\n","'","\\"]) "'"> #CharacterLiteral
+;
+
+TOKEN #NumericalLiteral :
+   <#DEC_DIGIT_NO_ZERO : ["1"-"9"]>
+   |
+   <#DEC_DIGIT : ["0"-"9"]>
+   |
+   <#DEC_DIGIT_OR_SEPARATOR : <DEC_DIGIT>|"_">
+   |
+   <#DEC_DIGITS : <DEC_DIGIT> (<DEC_DIGIT_OR_SEPARATOR>)* <DEC_DIGIT>>
+   |
+   <#DOUBLE_EXPONENT : ["e","E"] ["+","-"] <DEC_DIGITS>>
+   |
+   <DOUBLE_LITERAL : ((<DEC_DIGITS>)? "." <DEC_DIGITS> (<DOUBLE_EXPONENT>)?)
+                      | (<DEC_DIGITS><DOUBLE_EXPONENT>)>
+   |
+   <FLOAT_LITERAL : (<DOUBLE_LITERAL>|<DEC_DIGITS>) ("f"|"F")>
+   |
+   <INTEGER_LITERAL :  <DEC_DIGIT>
+                        | (<DEC_DIGIT_NO_ZERO> (<DEC_DIGIT_OR_SEPARATOR>)+ <DEC_DIGIT>)>
+   |
+   <#HEX_DIGIT :  ["0"-"9", "a"-"f", "A"-"F"]>
+   |
+   <#HEX_DIGIT_OR_SEPARATOR : <HEX_DIGIT>|"_">
+   |
+   <HEX_LITERAL : "0" ["x","X"] <HEX_DIGIT> ((<HEX_DIGIT_OR_SEPARATOR>)* <HEX_DIGIT>)?>
+   |
+   <#BIN_DIGIT : "0" | "1">
+   |
+   <#BIN_DIGIT_OR_SEPARATOR : "0"|"1"|"_">
+   |
+   <BIN_LITERAL : "0" ["b","B"] <BIN_DIGIT> ((<BIN_DIGIT_OR_SEPARATOR>)* <BIN_DIGIT>)?>
+   |
+   <UNSIGNED_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) ["u", "U"] ("L")?>
+   |
+   <LONG_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) "L">
+;
+
+TOKEN : <NL : "\n"> #Newline ;
+
+INCLUDE JAVA_IDENTIFIER_DEF
+
+// TODO: backtick identifer
+TOKEN #Identifier :
+   <IDENTIFIER : <JAVA_IDENTIFIER_START> (<JAVA_IDENTIFIER_PART>)*>
 ;
 
