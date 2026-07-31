@@ -2,7 +2,7 @@ DEFAULT_LEXICAL_STATE=KOTLIN;
 BASE_Name=Kotlin;
 
 TOKEN :
-   <SHEBANG : "#!" (~["\n"])* "\n">
+   <SHEBANG : "#!" (~["\n"])* >
 ;
 
 SKIP :
@@ -77,10 +77,11 @@ TOKEN #Operator :
    |
    <DISJ : "||">
    |
-   <EXCL_WS : "!">
-   |
    <EXCL_NO_WS : "!" >
    |
+// TODO: TOKEN_HOOK?
+//   <EXCL_WS : "!">
+//   |
    <COLON : ":">
    |
    <ASSIGNMENT : "=">
@@ -108,17 +109,18 @@ TOKEN #Operator :
    <HASH : "#">
    |
    // TODO figure these arobas out later.
+   // Probably use a TOKEN_HOOK
    <AT_NO_WS : "@">
-   |
-   <AT_POST_WS : "@">
-   |
-   <AT_PRE_WS : "@">
-   |
-   <AT_BOTH_WS : "@">
+//   |
+//   <AT_POST_WS : "@">
+//   |
+//   <AT_PRE_WS : "@">
+//   |
+//   <AT_BOTH_WS : "@">
    |
    <QUEST_NO_WS : "?">
-   |
-   <QUEST_WS : "?" >
+//   |
+//   <QUEST_WS : "?" >
    |
    <LANGLE : "<">
    |
@@ -148,27 +150,7 @@ TOKEN #Keyword :
    |
    <SUPER_AT : "super@"<IDENTIFIER>>
    |
-   <FILE : "file">
-   |
-   <FIELD : "field">
-   |
-   <PROPERTY : "property">
-   |
-   <GET : "get">
-   |
-   <SET : "set">
-   |
-   <RECEIVER : "receiver">
-   |
-   <PARAM : "param">
-   |
-   <SETPARAM : "setparam">
-   |
-   <DELEGATE : "delegate">
-   |
    <PACKAGE : "package">
-   |
-   <IMPORT : "import">
    |
    <CLASS : "class">
    |
@@ -184,21 +166,11 @@ TOKEN #Keyword :
    |
    <TYPE_ALIAS : "typealias">
    |
-   <CONSTRUCTOR : "constructor">
-   |
-   <BY : "by">
-   |
-   <COMPANION : "companion">
-   |
-   <INIT : "init">
-   |
    <THIS : "this">
    |
    <SUPER : "super">
    |
    <TYPEOF : "typeof">
-   |
-   <WHERE : "where">
    |
    <IF : "if">
    |
@@ -207,10 +179,6 @@ TOKEN #Keyword :
    <WHEN : "when">
    |
    <TRY : "try">
-   |
-   <CATCH : "catch">
-   |
-   <FINALLY : "finally">
    |
    <FOR : "for">
    |
@@ -236,64 +204,100 @@ TOKEN #Keyword :
    <NOT_IS : "!is">
    |
    <NOT_IN : "!in">
+;
+
+CONTEXTUAL :
+   <ABSTRACT : "abstract">
    |
-   <OUT : "out">
+   <ANNOTATION : "annotation">
+   |
+   <BY : "by">
+   |
+   <CATCH : "catch">
+   |
+   <COMPANION : "companion">
+   |
+   <CONSTRUCTOR : "constructor">
+   |
+   <CROSSINLINE : "crossinline">
+   |
+   <DATA : "data">
    |
    <DYNAMIC : "dynamic">
    |
-   <PUBLIC : "public">
+   <ENUM : "enum">
+   |
+   <EXTERNAL : "external">
+   |
+   <FINAL : "final">
+   |
+   <FINALLY : "finally">
+   |
+   <IMPORT : "import">
+   |
+   <INFIX : "infix">
+   |
+   <INIT : "init">
+   |
+   <INLINE : "inline">
+   |
+   <INNER : "inner">
+   |
+   <INTERNAL : "internal">
+   |
+   <LATEINIT : "lateinit">
+   |
+   <NOINLINE : "noinline">
+   |
+   <OPEN : "open">
+   |
+   <OPERATOR : "operator">
+   |
+   <OUT : "out">
+   |
+   <OVERRIDE : "override">
    |
    <PRIVATE : "private">
    |
    <PROTECTED : "protected">
    |
-   <INTERNAL : "internal">
+   <PUBLIC : "public">
    |
-   <ENUM : "enum">
+   <REIFIED : "reified">
    |
    <SEALED : "sealed">
    |
-   <ANNOTATION : "annotation">
-   |
-   <DATA : "data">
-   |
-   <INNER : "inner">
-   |
    <TAILREC : "tailrec">
-   |
-   <OPERATOR : "operator">
-   |
-   <INLINE : "inline">
-   |
-   <INFIX : "infix">
-   |
-   <EXTERNAL : "external">
-   |
-   <SUSPEND : "suspend">
-   |
-   <OVERRIDE : "override">
-   |
-   <ABSTRACT : "abstract">
-   |
-   <FINAL : "final">
-   |
-   <OPEN : "open">
-   |
-   <CONST : "const">
-   |
-   <LATEINIT : "lateinit">
    |
    <VARARG : "vararg">
    |
-   <NOINLINE : "noinline">
+   <WHERE : "where">
    |
-   <CROSSINLINE : "crossinline">
+   <GET : "get">
    |
-   <REIFIED : "reified">
+   <SET : "set">
+   |
+   <FIELD : "field">
+   |
+   <PROPERTY : "property">
+   |
+   <RECEIVER : "receiver">
+   |
+   <PARAM : "param">
+   |
+   <SETPARAM : "setparam">
+   |
+   <DELEGATE : "delegate">
+   |
+   <FILE : "file">
    |
    <EXPECT : "expect">
    |
    <ACTUAL : "actual">
+   |
+   <SUSPEND : "suspend">
+   |
+   <CONST : "const">
 ;
 
 INJECT NumericalLiteral : extends Literal
