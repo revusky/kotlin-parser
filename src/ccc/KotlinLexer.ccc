@@ -314,6 +314,9 @@ TOKEN #Literal :
    <#ESCAPE_SEQ : <UNICODE_ESCAPE>|<CHAR_ESCAPE>>
    |
    <CHARACTER_LITERAL : "'" (<ESCAPE_SEQ>|~["\r","\n","'","\\"]) "'"> #CharacterLiteral
+   |
+   // TODO: This is a stopgap because we need to handle interpolations
+   <STRING_LITERAL : '"' (<ESCAPE_SEQ>|~["\r","\n",'"',"\\"]) '"'> #StringLiteral
 ;
 
 TOKEN #NumericalLiteral :
