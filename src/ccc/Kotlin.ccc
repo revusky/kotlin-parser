@@ -359,9 +359,7 @@ MultiVariableDeclaration :
 ;
 
 Semis :
-   ";"
-   |
-   <NL> (";" | <NL>)*
+   (";" | <NL>)+
 ;
 
 Semi :
@@ -431,7 +429,7 @@ DoWhileStatement :
 
 ControlStructureBody : Block | Statement ;
 
-Block : "{" NLs (Statement)* NLs "}" ;
+Block : "{" NLs Statements NLs "}" ;
 
 DeclarationLA#scan :
    [Modifiers]
@@ -565,6 +563,7 @@ PropertyDeclaration :
     PropertyDelegate
    )
   ]
+/*
   [NLs ";" =>||]
   NLs
   [
@@ -573,7 +572,7 @@ PropertyDeclaration :
      Setter [NLs [Semi] Getter]
      |
      Semi (Getter|Setter)
-  ]
+  ]*/
 ;
 
 Getter :

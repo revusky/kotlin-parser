@@ -110,6 +110,8 @@ TOKEN #Operator :
    |
    <COLON_COLON : "::">
    |
+   <SEMICOLON : ";">
+   |
    <DOUBLE_SEMICOLON : ";;">
    |
    <HASH : "#">
