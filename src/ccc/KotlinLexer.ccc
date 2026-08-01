@@ -8,14 +8,17 @@ TOKEN :
 ;
 
 SKIP :
-   <WS : " " | "\t" | "f" | "\n" | "\r">
+   <WS : " " | "\t" | "f">
 ;
 
 UNPARSED #Comment :
   < LINE_COMMENT : "//" (~["\n"])* > #LineComment
 ;
 
-INJECT LEXER_CLASS : { private int commentStart, commentNesting; }
+INJECT LEXER_CLASS :
+{
+    private int commentStart, commentNesting;
+}
 
 MORE:
    <COMMENT_START : "/*">  {commentStart = matchStart;} : IN_DELIMITED_COMMENT

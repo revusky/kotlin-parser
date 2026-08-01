@@ -1,12 +1,13 @@
 DEFAULT_LEXICAL_STATE=KOTLIN;
-DEACTIVATE_TOKENS = SHEBANG, NL;
+DEACTIVATE_TOKENS = SHEBANG;
 TAB_SIZE=4;
 ENSURE_FINAL_EOL;
 
 INCLUDE "KotlinLexer.ccc"
 
 KotlinFile :
-  ACTIVATE_TOKENS SHEBANG NL [ShebangLine]
+  ACTIVATE_TOKENS SHEBANG [<SHEBANG>]
+  NLs
   (FileAnnotation)*
   [PackageDeclaration]
   (ImportDeclaration)*
@@ -18,18 +19,19 @@ TopLevelObject : Declaration [Semis] ;
 
 DottedName : <IDENTIFIER> ("." <IDENTIFIER> =>||)* ;
 
-ShebangLine : <SHEBANG> <NL> ;
+NLs#void : (<NL> {popNode();})* ;
 
 FileAnnotation :
    "@"
    ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
    =>||
-   'file' ":"
+   'file' NLs ":" NLs
     (
         "[" (UnescapedAnnotation)+ "]"
         |
         UnescapedAnnotation
     )
+    NLs
 ;
 
 PackageDeclaration : "package" <IDENTIFIER> Semis ;
@@ -47,32 +49,39 @@ ImportDeclaration :
 
 UnescapedAnnotation : UserType [ValueArguments #ConstructorInvocation(2)] ;
 
-ConstructorInvocation : UserType ValueArguments;
+ConstructorInvocation : UserType NLs ValueArguments;
 
-UserType : SimpleUserType ("." SimpleUserType)* ;
+UserType : SimpleUserType (NLs "." NLs =>|+1 SimpleUserType)* ;
 
-SimpleUserType : <IDENTIFIER> [TypeArguments] ;
+SimpleUserType : <IDENTIFIER> [NLs =>|+1 TypeArguments] ;
 
 ValueArguments :
    "("
+   NLs
    [
       ValueArgument
-      ("," =>|+1 ValueArgument)* [","]
+      (NLs "," =>|+1 NLs ValueArgument)* [NLs "," =>||]
+      NLs
    ]
    ")"
 ;
 
 ValueArgument :
    [Annotation]
-   [<IDENTIFIER> "=" =>||]
+   NLs
+   [<IDENTIFIER> NLs "=" =>|| NLs]
    ["*"]
+   NLs
    Expression
 ;
 
 TypeArguments :
    "<"
+   NLs
    TypeProjection
-   ("," =>|+1 TypeProjection)* [","]
+   (NLs "," =>|+1 NLs TypeProjection)*
+   [NLs "," =>||]
+   NLs
    ">"
 ;
 
@@ -83,7 +92,7 @@ TypeProjection :
 ;
 
 TypeProjectionModifiers :
-   ("in" | 'out' | Annotation)*
+   ("in" NLs | 'out' NLs | Annotation)*
 ;
 
 Annotation :
@@ -113,7 +122,7 @@ Type :
    (
      FunctionType
      |
-     DefinitelyNullableType
+     DefinitelyNonNullableType
      |
      NullableType
    )
@@ -123,12 +132,14 @@ TypeModifiers :
    ('suspend' | Annotation)+
 ;
 
-ParenthesizedType : "(" Type ")" ;
+ParenthesizedType : "(" NLs Type NLs ")" ;
 
 FunctionType :
-   [ReceiverType "." =>||]
+   [ReceiverType NLs "." =>|| NLs]
    FunctionTypeParameters
+   NLs
    "->" =>||
+   NLs
    Type
 ;
 
@@ -139,30 +150,41 @@ ReceiverType :
 
 NullableType :
    (TypeReference | ParenthesizedType)
+   NLs
    ("?")*
 ;
 
 TypeReference : 'dynamic' | UserType ;
 
-DefinitelyNullableType :
+DefinitelyNonNullableType :
    [TypeModifiers]
    (UserType | ParenthesizedUserType)
+   NLs
    "&" =>||
+   NLs
    [TypeModifiers]
    (UserType | ParenthesizedUserType)
 ;
 
-ParenthesizedUserType : "(" (UserType | ParenthesizedUserType) ")" ;
-
-FunctionTypeParameters :
+ParenthesizedUserType :
     "("
-    [Parameter|Type]
-    ("," =>|+1 (Parameter | Type))*
-    [","]
+    NLs
+    (UserType | ParenthesizedUserType)
+    NLs
     ")"
 ;
 
-Parameter : <IDENTIFIER> ":" =>|| Type ;
+FunctionTypeParameters :
+    "("
+    NLs
+    [Parameter|Type]
+    (NLs "," NLs =>|+1 (Parameter | Type))*
+    [NLs "," =>||]
+    NLs
+    ")"
+;
+
+Parameter : <IDENTIFIER> NLs ":" =>|| NLs Type ;
 
 #Expression#interface :
    Disjunction
@@ -178,36 +200,49 @@ INJECT InfixOperation : implements Expression
 INJECT ElvisExpression : implements Expression
 INJECT PostfixUnaryExpression : implements Expression
 
-Disjunction : Conjunction ("||" Conjunction)* ;
+Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
-Conjunction : Equality ("&&" Equality)* ;
+Conjunction : Equality (NLs "&&" =>|| NLs Equality)* ;
 
-Equality : Comparison (EqualityOperator Comparison)* ;
+Equality : Comparison (EqualityOperator NLs Comparison)* ;
 
-Comparison : GenericCallLikeComparison (ComparisonOperator GenericCallLikeComparison)* ;
+Comparison :
+    GenericCallLikeComparison
+    (ComparisonOperator NLs GenericCallLikeComparison)*
+;
 
-GenericCallLikeComparison : InfixOperation (CallSuffix)* ;
+GenericCallLikeComparison : InfixOperation (ENSURE ("{") CallSuffix)* ;
 
-InfixOperation : ElvisExpression ((InOperator ElvisExpression) | IsOperator Type)* ;
+InfixOperation :
+   ElvisExpression
+   (
+      InOperator NLs ElvisExpression
+      |
+      IsOperator NLs Type
+   )*
+;
 
-ElvisExpression : InfixFunctionCall ("?:" InfixFunctionCall)* ;
+ElvisExpression :
+    InfixFunctionCall
+    (NLs "?:" =>|| NLs InfixFunctionCall)*
+;
 
-InfixFunctionCall : RangeExpression (<IDENTIFIER> RangeExpression)* ;
+InfixFunctionCall : RangeExpression (<IDENTIFIER> NLs RangeExpression)* ;
 
-RangeExpression : AdditiveExpression ((".." | "..<") AdditiveExpression)* ;
+RangeExpression : AdditiveExpression ((".." | "..<") NLs AdditiveExpression)* ;
 
-AdditiveExpression : MultiplicativeExpression (("+"|"-") MultiplicativeExpression)* ;
+AdditiveExpression : MultiplicativeExpression (("+"|"-") NLs MultiplicativeExpression)* ;
 
-MultiplicativeExpression : AsExpression (("*"|"/"|"%") AsExpression)* ;
+MultiplicativeExpression : AsExpression (("*"|"/"|"%") NLs AsExpression)* ;
 
-AsExpression : PrefixUnaryExpression ("as" Type)* ;
+AsExpression : PrefixUnaryExpression (NLs "as" =>|| NLs Type)* ;
 
 PrefixUnaryExpression :
     (ENSURE {getTokenType(1) != IDENTIFIER || getTokenType(2) == AT_NO_WS} UnaryPrefix)*
     PostfixUnaryExpression
 ;
 
-UnaryPrefix#void : Annotation | PrefixUnaryOperator | Label ;
+UnaryPrefix#void : Annotation | PrefixUnaryOperator NLs | Label ;
 
 PrefixUnaryOperator#void : "++" | "--" | "-" | "+" | "!" ;
 
@@ -222,9 +257,22 @@ InOperator#void : "in" | "!in" ;
 
 IsOperator#void : "is" | "!is";
 
-Label : <IDENTIFIER> ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() } "@" =>|| ;
+Label :
+   <IDENTIFIER>
+   ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() }
+   "@" =>||
+   NLs
+;
+
+PostfixUnarySuffixLA#scan :
+   "++" | "--" | "!"|"<"|"["|"."|"::"
+   | "?" "." | "(" |
+   "{"
+;
 
 PostfixUnarySuffix#void :
+  SCAN PostfixUnarySuffixLA =>
+  (
     PostfixUnaryOperator
     |
     CallSuffix
@@ -234,13 +282,25 @@ PostfixUnarySuffix#void :
     IndexingSuffix
     |
     NavigationSuffix
+  )
 ;
 
 PostfixUnaryOperator#void : "++" | "--" | "!" ;
 
-NavigationSuffix : MemberAccessOperator (<IDENTIFIER> | ParenthesizedExpression | "class") ;
+NavigationSuffix :
+    MemberAccessOperator NLs
+    (<IDENTIFIER> | ParenthesizedExpression | "class")
+;
 
-IndexingSuffix : "[" Expression ("," =>|+1 Expression)* [","] "]" ;
+IndexingSuffix :
+    "["
+    NLs
+    Expression
+    (NLs "," NLs =>|+1 Expression)*
+    [NLs "," =>||]
+    NLs
+    "]"
+;
 
 CallSuffix :
     [TypeArguments]
@@ -263,39 +323,50 @@ MemberAccessOperator :
    =>||
 ;
 
-AnnotatedLambda : (Annotation)* [Label] LambdaLiteral ;
+AnnotatedLambda : (Annotation)* [Label] NLs =>|+1 LambdaLiteral ;
 
 LambdaLiteral :
     "{"
+    NLs
     [
-        [LambdaParameters] "->"
+        [LambdaParameters] NLs "->" NLs
     ]
     Statements
+    NLs
     "}"
 ;
 
 LambdaParameters :
-   LambdaParameter ("," =>|+1 LambdaParameter)* [","]
+   LambdaParameter (NLs "," =>|+1 NLs LambdaParameter)* [NLs "," =>||]
 ;
 
 LambdaParameter :
-   VariableDeclaration
+   MultiVariableDeclaration [NLs ":" =>|| NLs Type]
    |
-   MultiVariableDeclaration [":" Type]
+   VariableDeclaration
 ;
 
-VariableDeclaration : (Annotation)* <IDENTIFIER> [":" Type] ;
+VariableDeclaration : (Annotation)* NLs <IDENTIFIER> [NLs ":" =>|| NLs Type] ;
 
 MultiVariableDeclaration :
     "("
+    NLs
     VariableDeclaration
-    ("," =>|+1 VariableDeclaration)* [","]
+    (NLs "," NLs =>|+1 VariableDeclaration)*
+    [NLs "," =>||]
+    NLs
     ")"
 ;
 
 Semis :
-   ACTIVATE_TOKENS NL
-    (";" | <NL>)+
+   ";"
+   |
+   <NL> (";" | <NL>)*
+;
+
+Semi :
+   (";"|<NL>)
+   NLs
 ;
 
 Statements :
@@ -325,27 +396,34 @@ Statement :
 
 ForStatement :
    "for"
+   NLs
    "("
    (Annotation)*
    (MultiVariableDeclaration|VariableDeclaration)
    "in"
    Expression
    ")"
+   NLs
    [ControlStructureBody]
 ;
 
 WhileStatement :
     "while"
+    NLs
     "("
     Expression
     ")"
+    NLs
     (ControlStructureBody | ";")
 ;
 
 DoWhileStatement :
    "do"
+   NLs
    [ControlStructureBody]
+   NLs
    "while"
+   NLs
    "("
    Expression
    ")"
@@ -353,7 +431,7 @@ DoWhileStatement :
 
 ControlStructureBody : Block | Statement ;
 
-Block : "{" Statements "}" ;
+Block : "{" NLs (Statement)* NLs "}" ;
 
 DeclarationLA#scan :
    [Modifiers]
@@ -384,39 +462,43 @@ ClassDeclaration :
       ["fun"] "interface" =>||
    )
    =>||
+   NLs
    <IDENTIFIER>
-   [TypeParameters]
-   [PrimaryConstructor]
-   [":" DelegationSpecifiers]
-   [TypeConstraints]
+   [NLs =>|+1 TypeParameters]
+   [NLs =>|+1 PrimaryConstructor]
+   [NLs ":" =>|| DelegationSpecifiers]
+   [NLs =>|+1 TypeConstraints]
    (
-      SCAN 0 {isEnum} => EnumClassBody
+      SCAN 0 {isEnum} => NLs EnumClassBody
       |
-      ClassBody
+      NLs ClassBody
    )
 ;
 
 ObjectDeclaration :
     [Modifiers]
     "object" =>||
+    NLs
     <IDENTIFIER>
-    ":"
-    Type
+    [NLs ":" =>|| NLs DelegationSpecifiers]
+    [NLs =>|+1 ClassBody]
 ;
 
 FunctionDeclaration :
    [Modifiers]
    "fun" =>||
-   [TypeParameters]
-   [ReceiverType "." =>||]
+   [NLs =>|+1 TypeParameters]
+   [NLs ReceiverType NLs "." =>||]
+   NLs
    <IDENTIFIER>
+   NLs
    FunctionValueParameters
-   [":" Type]
-   [TypeConstraints]
-   [FunctionBody]
+   [NLs ":" =>|| NLs Type]
+   [NLs =>|+1 TypeConstraints]
+   [NLs =>|+1 FunctionBody]
 ;
 
-FunctionBody : Block | "=" Expression ;
+FunctionBody : Block | "=" NLs Expression ;
 
 Modifiers# :
    Annotation
@@ -434,61 +516,76 @@ Modifier#void :
 
 TypeAlias :
    [Modifiers] "typealias" =>||
+   NLs
    <IDENTIFIER>
-   [TypeParameters]
+   [NLs =>|+1 TypeParameters]
+   NLs
    "="
+   NLs
    Type
 ;
 
-PrimaryConstructor : [Modifiers] 'constructor' ClassParameters ;
+PrimaryConstructor : [Modifiers] 'constructor' NLs ClassParameters ;
 
 ClassParameters :
     "("
+    NLs
     [
         ClassParameter
-        ("," =>|+1 ClassParameter)* [","]
+        (NLs "," NLs =>|+1 ClassParameter)* [NLs "," =>||]
     ]
+    NLs
     ")"
 ;
 
 ClassParameter :
    [Modifiers]
    ["val"|"var"]
+   NLs
    <IDENTIFIER>
    ":"
+   NLs
    Type
-   ["=" Expression]
+   [NLs "=" =>|| NLs Expression]
 ;
 
 PropertyDeclaration :
   [Modifiers]
   ("val"|"var")
   =>||
-  [TypeParameters]
-  [ReceiverType "." =>||]
-  (MultiVariableDeclaration | VariableDeclaration)
-  [TypeConstraints]
+  [NLs =>|+1 TypeParameters]
+  [NLs ReceiverType NLs "." =>||]
+  (NLs (MultiVariableDeclaration | VariableDeclaration))
+  [NLs =>|+1 TypeConstraints]
   [
-    "=" Expression
+   NLs =>|+1
+   (
+    "=" NLs Expression
     |
     PropertyDelegate
+   )
   ]
-  [","]
-  (
-    [
-        Getter [[Semis] Setter]
-        |
-        Setter [[Semis] Getter]
-    ]
-  )
+  [NLs ";" =>||]
+  NLs
+  [
+     Getter [NLs [Semi] Setter]
+     |
+     Setter [NLs [Semi] Getter]
+     |
+     Semi (Getter|Setter)
+  ]
 ;
 
 Getter :
    [Modifiers]
    'get' =>||
    [
-      "(" ")"
-      [":" Type]
+      NLs
+      "(" =>||
+      NLs
+      ")"
+      [NLs ":" =>|| NLs Type]
+      NLs
       FunctionBody
    ]
 ;
@@ -497,46 +594,68 @@ Setter :
    [Modifiers]
    'set' =>||
    [
-      "("
-      FunctionValueParameterWithOptionalType [","]
+      NLs
+      "(" =>||
+      NLs
+      FunctionValueParameterWithOptionalType [NLs "," =>||]
+      NLs
       ")"
-      [":" Type]
+      [NLs ":" =>|| NLs Type]
+      NLs
       FunctionBody
    ]
 ;
 
 TypeParameters :
    "<"
+   NLs
    TypeParameter
-   ("," =>|+1 TypeParameter)* [","]
+   (NLs "," NLs =>|+1 TypeParameter)* [NLs "," =>||]
+   NLs
    ">"
 ;
 
 TypeParameter :
    TypeParameterModifiers
+   NLs
    <IDENTIFIER>
-   [":" Type]
+   [NLs ":" =>|| NLs Type]
 ;
 
-TypeConstraints : 'where' TypeConstraint ("," TypeConstraint)* ;
+TypeConstraints : 'where' NLs TypeConstraint (NLs "," =>|| NLs TypeConstraint)* ;
 
-TypeConstraint : (Annotation)* <IDENTIFIER> ":" Type ;
+TypeConstraint : (Annotation)* <IDENTIFIER> NLs ":" NLs Type ;
 
 TypeParameterModifiers# : ('reified' | "in" | 'out' | Annotation)* ;
 
-ClassBody : "{" ClassMemberDeclarations "}" ;
+ClassBody : "{" NLs ClassMemberDeclarations NLs "}" ;
 
 // TODO: Disambiguate this from a ClassBody?
-EnumClassBody : "{" [EnumEntries] [";" ClassMemberDeclarations]"}" ;
+EnumClassBody :
+    "{"
+    NLs
+    [EnumEntries]
+    [NLs ";" =>|| NLs ClassMemberDeclarations]
+    NLs
+    "}"
+;
 
 // TODO: Deal with the lhs being assignable
-Assignment : Expression AssignmentOperator =>|| Expression ;
+Assignment :
+    Expression
+    AssignmentOperator =>||
+    NLs
+    Expression
+;
 
 AssignmentOperator#void : "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
 
-DelegationSpecifiers : AnnotatedDelegationSpecifier ("," AnnotatedDelegationSpecifier)* ;
+DelegationSpecifiers :
+    AnnotatedDelegationSpecifier
+    (NLs "," =>|| NLs AnnotatedDelegationSpecifier)*
+;
 
-AnnotatedDelegationSpecifier : (Annotation)* DelegationSpecifier ;
+AnnotatedDelegationSpecifier : (Annotation)* NLs DelegationSpecifier ;
 
 DelegationSpecifier :
    ConstructorInvocation
@@ -547,14 +666,16 @@ DelegationSpecifier :
    |
    FunctionType
    |
-   'suspend' FunctionType
+   'suspend' NLs FunctionType
 ;
 
-PropertyDelegate : 'by' Expression ;
+PropertyDelegate : 'by' NLs Expression ;
 
 ExplicitDelegation :
    (UserType | FunctionType)
+   NLs
    'by' =>||
+   NLs
    Expression
 ;
 
@@ -570,37 +691,49 @@ ClassMemberDeclaration :
    SecondaryConstructor
 ;
 
-
-AnonymousInitializer : 'init' Block ;
+AnonymousInitializer : 'init' NLs Block ;
 
 CompanionObject :
     [Modifiers]
     'companion' =>||
+    NLs
     ['data']
+    NLs
     "object"
-    [<IDENTIFIER>]
-    [":" DelegationSpecifiers]
-    [ClassBody]
+    [NLs <IDENTIFIER> =>||]
+    [NLs ":" =>|| NLs DelegationSpecifiers]
+    [NLs =>|+1 ClassBody]
 ;
-
 
 SecondaryConstructor :
    [Modifiers]
    'constructor' =>||
+   NLs
    FunctionValueParameters
-   [":" ConstructorDelegationCall]
+   [NLs ":" =>|| NLs ConstructorDelegationCall]
+   NLs
    [Block]
 ;
 
-ConstructorDelegationCall : ("this"|"super") ValueArguments ;
+ConstructorDelegationCall : ("this"|"super") NLs ValueArguments ;
 
 FunctionValueParameters :
    "("
-   [FunctionValueParameter ("," =>|+1 FunctionValueParameter)* [","]]
+   NLs
+   [
+      FunctionValueParameter
+      (NLs "," NLs =>|+1 FunctionValueParameter)*
+      [NLs "," =>||]
+   ]
+   NLs
    ")"
 ;
 
-FunctionValueParameter : [ParameterModifiers] Parameter ["=" Expression] ;
+FunctionValueParameter :
+    [ParameterModifiers]
+    Parameter
+    [NLs "=" =>|| NLs Expression]
+;
 
 ParameterModifiers :
     Annotation
@@ -613,14 +746,19 @@ ParameterModifier#void : 'vararg' | 'noinline' | 'crossinline' ;
 FunctionValueParameterWithOptionalType :
    [ParameterModifiers]
    ParameterWithOptionalType
-   ["=" Expression]
+   [NLs "=" =>|| NLs Expression]
 ;
 
-ParameterWithOptionalType : <IDENTIFIER> [":" Type] ;
+ParameterWithOptionalType : <IDENTIFIER> NLs [":" NLs Type] ;
 
-EnumEntries : EnumEntry ("," =>|+1 EnumEntry)* [","] ;
+EnumEntries : EnumEntry =>|| (NLs "," NLs =>|+1 EnumEntry)* NLs [","] ;
 
-EnumEntry : [Modifiers] <IDENTIFIER> [ValueArguments] [ClassBody] ;
+EnumEntry :
+   [Modifiers NLs]
+   <IDENTIFIER>
+   [NLs =>|+1 ValueArguments]
+   [NLs =>|+1 ClassBody]
+;
 
 PrimaryExpression :
    <IDENTIFIER>
@@ -660,7 +798,7 @@ PrimaryExpression :
    BreakExpression
 ;
 
-ParenthesizedExpression : "(" Expression ")" ;
+ParenthesizedExpression : "(" NLs Expression NLs ")" ;
 
 LiteralConstant#void :
    "true" | "false" | "null" |
@@ -669,28 +807,33 @@ LiteralConstant#void :
    <LONG_LITERAL> | <UNSIGNED_LITERAL>
 ;
 
-CallableReference : [ReceiverType] "::" =>|| (<IDENTIFIER> | "class") ;
+CallableReference : [ReceiverType] "::" =>|| NLs (<IDENTIFIER> | "class") ;
 
 ObjectLiteral :
    ['data']
-   "object"
-   [":" DelegationSpecifiers]
-   [ClassBody]
+   NLs
+   "object" =>||
+   [NLs ":" =>|| NLs DelegationSpecifiers NLs]
+   [NLs =>|+1 ClassBody]
 ;
 
 WhenExpression :
    "when"
+   NLs
    [WhenSubject]
+   NLs
    "{"
-   (WhenEntry)*
+   NLs
+   (WhenEntry NLs)*
+   NLs
    "}"
 ;
 
 WhenEntry :
-   WhenCondition ("," =>|+1 WhenCondition)* [","]
-   "->" ControlStructureBody [Semis]
+   WhenCondition (NLs "," =>|+1 NLs WhenCondition)* [NLs "," =>||]
+   NLs "->" NLs ControlStructureBody [Semis]
    |
-   "else" "->" ControlStructureBody [Semis]
+   "else" NLs "->" NLs ControlStructureBody [Semis]
 ;
 
 WhenCondition :
@@ -701,17 +844,21 @@ WhenCondition :
    TypeTest
 ;
 
-TypeTest : IsOperator Type ;
+TypeTest : IsOperator NLs Type ;
 
-RangeTest : InOperator Expression ;
+RangeTest : InOperator NLs Expression ;
 
 WhenSubject :
     "("
        [
          (Annotation)*
+         NLs
          "val"
+         NLs
          VariableDeclaration
+         NLs
          "="
+         NLs
        ]
        Expression
     ")"
@@ -723,64 +870,77 @@ SuperExpression :
     <SUPER_AT>
     |
     // TODO: Look at whitespace
-    "super" ["<" Type ">"] "@" <IDENTIFIER>
+    "super" ["<" NLs Type NLs ">"] "@" <IDENTIFIER>
 ;
 
 AnonymousFunction :
    ['suspend']
+   NLs
    "fun" =>||
-   [Type "."]
+   [NLs =>|+1 Type NLs "."]
+   NLs
    ParameterWithOptionalType
-   [":" Type]
-   [TypeConstraints]
-   [FunctionBody]
+   [NLs ":" =>|| NLs Type]
+   [NLs =>|+1 TypeConstraints]
+   [NLs =>|+1 FunctionBody]
 ;
 
 IfExpression :
    "if"
+   NLs
    "("
+   NLs
    Expression
+   NLs
    ")"
+   NLs
    (ControlStructureBody | ";")
+   NLs
    [
       "else"
+      NLs
       (ControlStructureBody | ";")
+      NLs
    ]
 ;
 
 CollectionLiteral :
    "["
+   NLs
    [
         Expression
-        ("," =>|+1 Expression)*
-        [","]
+        (NLs "," NLs =>|+1 Expression)*
+        [NLs "," =>||]
+        NLs
    ]
    "]"
 ;
 
 TryExpression :
     {boolean hasCatch = false, hasFinally = false;}
-    "try" Block
-    (CatchBlock {hasCatch = true;})*
-    [FinallyBlock {hasFinally = true;}]
+    "try" NLs Block
+    (NLs =>|+1 CatchBlock {hasCatch = true;})*
+    [NLs =>|+1 FinallyBlock {hasFinally = true;}]
     ASSERT {hasCatch | hasFinally : "There must be at least one catch or finally block."}
 ;
 
 CatchBlock :
    'catch'
+   NLs
    "("
    (Annotation)*
    <IDENTIFIER>
    ":"
    Type
-   [","]
+   [NLs "," =>||]
    ")"
+   NLs
    Block
 ;
 
-FinallyBlock : 'finally' Block ;
+FinallyBlock : 'finally' NLs Block ;
 
-ThrowExpression : "throw" Expression ;
+ThrowExpression : "throw" NLs Expression ;
 
 ReturnExpression : <RETURN_AT> | "return" Expression ;
 
