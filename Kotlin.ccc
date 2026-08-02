@@ -192,7 +192,11 @@ FunctionTypeParameters :
     ")"
 ;
 
-Parameter : <IDENTIFIER> NLs ":" =>|| NLs Type ;
+Parameter : <IDENTIFIER> NLs ":" =>|| NLs [ContextParameters] Type ;
+
+ContextParameters :
+  'context' "(" Type ("," Type)* ")"
+;
 
 #Expression#interface :
    Disjunction
