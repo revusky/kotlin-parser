@@ -1,6 +1,5 @@
 import java.io.IOException;
-
-import kotlinparser.*;
+import org.parsers.kotlin.*;
 
 FileSystem fileSystem = FileSystems.getDefault();
 

@@ -2,7 +2,7 @@
     <target name="init">
         <uptodate property="parser.uptodate"
             targetfile="build/org/parsers/kotlin/KotlinParser.java">
-            <srcfiles dir="src/ccc" includes="*.ccc" />
+            <srcfiles dir="." includes="*.ccc" />
         </uptodate>
     </target>
 
@@ -11,11 +11,12 @@
     </target>
 
     <target name="build-parser" depends="init" unless="parser.uptodate">
+        <echo>Generating the parser...</echo>
         <java fork="true" jar="bin/congocc.jar" failonerror="true">
             <assertions>
                 <enable />
             </assertions>
-            <arg line="-n -q -d ${basedir}/build src/ccc/Kotlin.ccc" />
+            <arg line="-n -q -d build Kotlin.ccc" />
         </java>
     </target>
 
@@ -27,7 +28,6 @@
             failonerror="true"
             includeantruntime="false"
             release="17">
-            <!--src path="src/java" /-->
             <src path="build" />
         </javac>
     </target>
