@@ -21,13 +21,14 @@
     </target>
 
     <target name="compile" depends="build-parser">
+        <copy file="KParse.java" todir="build"/>
         <javac destdir="build"
             deprecation="off"
             debug="on"
             optimize="off"
             failonerror="true"
             includeantruntime="false"
-            release="17">
+            release="8">
             <src path="build" />
         </javac>
     </target>
