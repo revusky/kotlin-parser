@@ -228,6 +228,7 @@ INJECT AdditiveExpression : implements Expression
 INJECT MultiplicativeExpression : implements Expression
 INJECT AsExpression : implements Expression
 INJECT PrefixUnaryExpression : implements Expression
+INJECT RangeExpression : implements Expression
 
 INJECT PrimaryExpression : extends Expression
 INJECT IfExpression : implements PrimaryExpression

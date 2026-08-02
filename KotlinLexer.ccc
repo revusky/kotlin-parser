@@ -346,7 +346,7 @@ TOKEN #NumericalLiteral :
    |
    <#DEC_DIGIT_OR_SEPARATOR : <DEC_DIGIT>|"_">
    |
-   <#DEC_DIGITS : <DEC_DIGIT> (<DEC_DIGIT_OR_SEPARATOR>)* <DEC_DIGIT>>
+   <#DEC_DIGITS : <DEC_DIGIT> ((<DEC_DIGIT_OR_SEPARATOR>)* <DEC_DIGIT>)?>
    |
    <#DOUBLE_EXPONENT : ["e","E"] ["+","-"] <DEC_DIGITS>>
    |
