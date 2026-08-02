@@ -466,7 +466,7 @@ Block :
 
 DeclarationLA#scan :
    [Modifiers]
-   ( "class" | "fun" | "interface" | "object" | "val" | "var" | "typealias")
+   ( "class" | "fun" | "interface" | "object" | "val" | "var" | "typealias" | 'annotation')
 ;
 
 Declaration :
@@ -543,9 +543,7 @@ FunctionDeclaration :
 FunctionBody : Block | "=" NLs Expression ;
 
 Modifiers# :
-   Annotation
-   |
-   Modifier (Annotation|Modifier)*
+   (Annotation|Modifier)+
 ;
 
 Modifier#void :

@@ -21,7 +21,7 @@
     </target>
 
     <target name="compile" depends="build-parser">
-        <copy file="KParse.java" todir="build"/>
+        <!--copy file="KParse.java" todir="build" / -->
         <javac destdir="build"
             deprecation="off"
             debug="on"
@@ -31,5 +31,24 @@
             release="8">
             <src path="build" />
         </javac>
+        <javac includes="KParse.java"
+               srcdir="."
+               destdir="build"
+               classpath="build"
+               includeantruntime="false"
+               release="8"
+        />
+    </target>
+
+    <target name="test" depends="compile">
+        <java fork="true"
+              classpath="build"
+              failonerror="true"
+              classname="KParse" >
+            <assertions>
+                <enable />
+            </assertions>
+            <arg value="testfiles" />
+        </java>
     </target>
 </project>
