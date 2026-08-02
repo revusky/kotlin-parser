@@ -176,7 +176,7 @@ TOKEN #Keyword :
    |
    <TYPE_ALIAS : "typealias">
    |
-   <_THIS : "this">
+   <_THIS : "this"> #This
    |
    <SUPER : "super">
    |
@@ -312,7 +312,10 @@ CONTEXTUAL :
    <VALUE : "value">
 ;
 
+INJECT Literal : implements PrimaryExpression
 INJECT NumericalLiteral : extends Literal
+INJECT Identifier : implements PrimaryExpression
+INJECT This : implements PrimaryExpression
 
 TOKEN #Literal :
    <TRUE : "true"> #BooleanLiteral
@@ -352,7 +355,13 @@ TOKEN #NumericalLiteral :
    <FLOAT_LITERAL : (<DOUBLE_LITERAL>|<DEC_DIGITS>) ("f"|"F")>
    |
    <INTEGER_LITERAL :  <DEC_DIGIT>
-                        | (<DEC_DIGIT_NO_ZERO> (<DEC_DIGIT_OR_SEPARATOR>)+ <DEC_DIGIT>)>
+                        |
+                        (
+                           <DEC_DIGIT_NO_ZERO>
+                           (<DEC_DIGIT_OR_SEPARATOR>)*
+                           <DEC_DIGIT>
+                        )
+   >
    |
    <#HEX_DIGIT :  ["0"-"9", "a"-"f", "A"-"F"]>
    |
@@ -377,5 +386,3 @@ INCLUDE JAVA_IDENTIFIER_DEF
 TOKEN #Identifier :
    <IDENTIFIER : <JAVA_IDENTIFIER_START> (<JAVA_IDENTIFIER_PART>)*>
 ;
-
-INJECT Identifier : implements Expression

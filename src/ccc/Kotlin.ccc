@@ -34,7 +34,7 @@ FileAnnotation :
     NLs
 ;
 
-PackageDeclaration : "package" <IDENTIFIER> Semis ;
+PackageDeclaration : "package" DottedName Semis ;
 
 ImportDeclaration :
     'import'
@@ -49,7 +49,7 @@ ImportDeclaration :
 
 UnescapedAnnotation : UserType [ValueArguments #ConstructorInvocation(2)] ;
 
-ConstructorInvocation : UserType NLs ValueArguments;
+ConstructorInvocation : UserType NLs =>|+1 ValueArguments;
 
 UserType : SimpleUserType (NLs "." NLs =>|+1 SimpleUserType)* ;
 
@@ -107,6 +107,7 @@ Annotation :
       |
       "[" (UnescapedAnnotation)+ "]"
    )
+   NLs
 ;
 
 AnnotationUseSiteTarget :
@@ -199,6 +200,20 @@ INJECT GenericCallLikeComparison : implements Expression
 INJECT InfixOperation : implements Expression
 INJECT ElvisExpression : implements Expression
 INJECT PostfixUnaryExpression : implements Expression
+INJECT InfixFunctionCall : implements Expression
+INJECT ElvisExpression : implements Expression
+INJECT AdditiveExpression : implements Expression
+INJECT MultiplicativeExpression : implements Expression
+INJECT AsExpression : implements Expression
+INJECT PrefixUnaryExpression : implements Expression
+
+INJECT PrimaryExpression : extends Expression
+INJECT IfExpression : implements PrimaryExpression
+INJECT ReturnExpression : implements PrimaryExpression
+INJECT ThrowExpression : implements PrimaryExpression
+INJECT TryExpression : implements PrimaryExpression
+INJECT WhenExpression : implements PrimaryExpression
+INJECT ObjectLiteral : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -265,9 +280,12 @@ Label :
 ;
 
 PostfixUnarySuffixLA#scan :
-   "++" | "--" | "!"|"<"|"["|"."|"::"
-   | "?" "." | "(" |
-   "{"
+   "++" | "--" | "!"|"["|"."|"::" | "(" | "{"
+   |
+   "?" "."
+   |
+   ENSURE ~\...\Comparison
+   "<"
 ;
 
 PostfixUnarySuffix#void :
@@ -429,7 +447,16 @@ DoWhileStatement :
 
 ControlStructureBody : Block | Statement ;
 
-Block : "{" NLs Statements NLs "}" ;
+Block :
+   "{"
+     (
+       SCAN ~(NLs "}") =>
+       NLs
+       Statement
+     )*
+     NLs
+   "}"
+;
 
 DeclarationLA#scan :
    [Modifiers]
@@ -463,14 +490,25 @@ ClassDeclaration :
    NLs
    <IDENTIFIER>
    [NLs =>|+1 TypeParameters]
-   [NLs =>|+1 PrimaryConstructor]
+   [
+      NLs
+      ENSURE
+      (
+         [[Modifiers] 'constructor' NLs] "("
+      )
+      =>||
+      PrimaryConstructor
+   ]
    [NLs ":" =>|| DelegationSpecifiers]
    [NLs =>|+1 TypeConstraints]
-   (
-      SCAN 0 {isEnum} => NLs EnumClassBody
-      |
-      NLs ClassBody
-   )
+   [
+      SCAN (NLs "{") =>
+      (
+         SCAN 0 {isEnum} => NLs EnumClassBody
+         |
+         SCAN 0 NLs ClassBody
+      )
+   ]
 ;
 
 ObjectDeclaration :
@@ -523,7 +561,7 @@ TypeAlias :
    Type
 ;
 
-PrimaryConstructor : [Modifiers] 'constructor' NLs ClassParameters ;
+PrimaryConstructor : [[Modifiers] 'constructor' NLs] ClassParameters ;
 
 ClassParameters :
     "("
@@ -563,16 +601,21 @@ PropertyDeclaration :
     PropertyDelegate
    )
   ]
-/*
-  [NLs ";" =>||]
-  NLs
+// [NLs ";" =>||]
   [
-     Getter [NLs [Semi] Setter]
-     |
-     Setter [NLs [Semi] Getter]
-     |
-     Semi (Getter|Setter)
-  ]*/
+     NLs
+     ENSURE (";" | [Modifiers] ('get'|'set'))
+     =>||
+     (
+        Getter [NLs [Semi] ENSURE ([Modifiers] 'set') =>|| Setter]
+        |
+        Setter [NLs [Semi] ENSURE ([Modifiers] 'get') =>|| Getter]
+//        |
+//        Setter [NLs [Semi] =>|+1 Getter]
+        |
+        Semi (Getter|Setter)
+     )
+  ]
 ;
 
 Getter :
@@ -759,7 +802,7 @@ EnumEntry :
    [NLs =>|+1 ClassBody]
 ;
 
-PrimaryExpression :
+PrimaryExpression#interface :
    <IDENTIFIER>
    |
    LiteralConstant
@@ -808,7 +851,7 @@ LiteralConstant#void :
 
 CallableReference : [ReceiverType] "::" =>|| NLs (<IDENTIFIER> | "class") ;
 
-ObjectLiteral :
+ObjectLiteral# :
    ['data']
    NLs
    "object" =>||
@@ -941,7 +984,15 @@ FinallyBlock : 'finally' NLs Block ;
 
 ThrowExpression : "throw" NLs Expression ;
 
-ReturnExpression : <RETURN_AT> | "return" Expression ;
+ReturnExpression# :
+    <RETURN_AT>
+    |
+    "return"
+    [
+      ENSURE ~(";"|<NL>)
+      Expression
+    ]
+;
 
 ContinueExpression : <CONTINUE_AT> | "continue" ;
 
