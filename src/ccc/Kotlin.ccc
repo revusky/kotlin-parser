@@ -2,6 +2,7 @@ DEFAULT_LEXICAL_STATE=KOTLIN;
 DEACTIVATE_TOKENS = SHEBANG;
 TAB_SIZE=4;
 ENSURE_FINAL_EOL;
+PARSER_PACKAGE=org.parsers.kotlin;
 
 INCLUDE "KotlinLexer.ccc"
 
@@ -284,8 +285,8 @@ PostfixUnarySuffixLA#scan :
    |
    "?" "."
    |
-   ENSURE ~\...\Comparison
-   "<"
+   //REVISIT
+   TypeArguments
 ;
 
 PostfixUnarySuffix#void :
@@ -349,7 +350,12 @@ LambdaLiteral :
     [
         [LambdaParameters] NLs "->" NLs
     ]
-    Statements
+    (
+       SCAN ~([Semis] "}") =>
+       [Semis]
+       Statement
+    )*
+//    Statements
     NLs
     "}"
 ;
@@ -450,11 +456,11 @@ ControlStructureBody : Block | Statement ;
 Block :
    "{"
      (
-       SCAN ~(NLs "}") =>
-       NLs
+       SCAN ~([Semis] "}") =>
+       [Semis]
        Statement
      )*
-     NLs
+   [Semis]
    "}"
 ;
 
@@ -604,14 +610,12 @@ PropertyDeclaration :
 // [NLs ";" =>||]
   [
      NLs
-     ENSURE (";" | [Modifiers] ('get'|'set'))
+     ENSURE ([";"] [Modifiers] ('get'|'set'))
      =>||
      (
         Getter [NLs [Semi] ENSURE ([Modifiers] 'set') =>|| Setter]
         |
         Setter [NLs [Semi] ENSURE ([Modifiers] 'get') =>|| Getter]
-//        |
-//        Setter [NLs [Semi] =>|+1 Getter]
         |
         Semi (Getter|Setter)
      )
