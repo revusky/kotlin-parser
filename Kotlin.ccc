@@ -412,6 +412,18 @@ MultiVariableDeclaration :
     ")"
 ;
 
+DestructuringVariableDeclaration :
+    "["
+    NLs
+    DestructuringEntry
+    (NLs "," NLs =>|+1 DestructuringEntry)*
+    [NLs "," =>||]
+    NLs
+    "]"
+;
+
+DestructuringEntry : "_" | <IDENTIFIER> NLs [":" NLs Type] ;
+
 Semis :
    (";" | <NL>)+
 ;
@@ -451,7 +463,13 @@ ForStatement :
    NLs
    "("
    (Annotation)*
-   (MultiVariableDeclaration|VariableDeclaration)
+   (
+      MultiVariableDeclaration
+      |
+      DestructuringVariableDeclaration
+      |
+      VariableDeclaration
+   )
    "in"
    Expression
    ")"
