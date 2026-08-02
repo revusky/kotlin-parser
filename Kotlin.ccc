@@ -526,11 +526,17 @@ Block :
 ;
 
 DeclarationLA#scan :
-   //[ContextParameters]
+   // The following is a bit horrific,
+   // but it seems necessary
+   ContextParameters
+   NLs
+   [Modifiers]
+   "fun" =>||
+   |
    [Modifiers]
    ( "class" | "fun" | "interface"
    | "object" | "val" | "var" | "typealias"
-   | 'annotation' | 'context')
+   | 'annotation')
 ;
 
 Declaration :
@@ -1038,7 +1044,7 @@ CatchBlock :
    NLs
    "("
    (Annotation)*
-   <IDENTIFIER>
+   ("_"|<IDENTIFIER>)
    ":"
    Type
    [NLs "," =>||]
