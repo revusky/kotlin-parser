@@ -176,7 +176,7 @@ TOKEN #Keyword :
    |
    <TYPE_ALIAS : "typealias">
    |
-   <_THIS : "this"> #This
+   <_THIS : "this">
    |
    <SUPER : "super">
    |
@@ -315,7 +315,6 @@ CONTEXTUAL :
 INJECT Literal : implements PrimaryExpression
 INJECT NumericalLiteral : extends Literal
 INJECT Identifier : implements PrimaryExpression
-INJECT This : implements PrimaryExpression
 
 TOKEN #Literal :
    <TRUE : "true"> #BooleanLiteral

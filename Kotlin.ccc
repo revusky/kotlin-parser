@@ -52,7 +52,13 @@ UnescapedAnnotation : UserType [ValueArguments #ConstructorInvocation(2)] ;
 
 ConstructorInvocation : UserType NLs =>|+1 ValueArguments;
 
-UserType : SimpleUserType (NLs "." NLs =>|+1 SimpleUserType)* ;
+UserType :
+    SimpleUserType
+    (
+      ENSURE ~\...\ReceiverType
+      NLs "." NLs =>|+1 SimpleUserType
+    )*
+;
 
 SimpleUserType : <IDENTIFIER> [NLs =>|+1 TypeArguments] ;
 
@@ -190,6 +196,12 @@ Parameter : <IDENTIFIER> NLs ":" =>|| NLs Type ;
 
 #Expression#interface :
    Disjunction
+   {
+      if (!(peekNode() instanceof Expression)) {
+          System.out.println(peekNode().getType());
+          System.out.println(peekNode());
+      }
+   }
    {return (Expression) peekNode();}
 ;
 
@@ -215,6 +227,9 @@ INJECT ThrowExpression : implements PrimaryExpression
 INJECT TryExpression : implements PrimaryExpression
 INJECT WhenExpression : implements PrimaryExpression
 INJECT ObjectLiteral : implements PrimaryExpression
+INJECT ThisExpression : implements PrimaryExpression
+INJECT ContinueExpression : implements PrimaryExpression
+INJECT BreakExpression : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -243,7 +258,14 @@ ElvisExpression :
     (NLs "?:" =>|| NLs InfixFunctionCall)*
 ;
 
-InfixFunctionCall : RangeExpression (<IDENTIFIER> NLs RangeExpression)* ;
+InfixFunctionCall :
+    RangeExpression
+    (
+      <IDENTIFIER>
+      NLs
+      RangeExpression
+   )*
+;
 
 RangeExpression : AdditiveExpression ((".." | "..<") NLs AdditiveExpression)* ;
 
@@ -348,7 +370,11 @@ LambdaLiteral :
     "{"
     NLs
     [
-        [LambdaParameters] NLs "->" NLs
+        [LambdaParameters]
+        NLs
+        "->"
+        =>||
+        NLs
     ]
     (
        SCAN ~([Semis] "}") =>
@@ -908,7 +934,7 @@ WhenSubject :
     ")"
 ;
 
-ThisExpression : "this" | <THIS_AT> ;
+ThisExpression# : "this" | <THIS_AT> ;
 
 SuperExpression :
     <SUPER_AT>
@@ -996,9 +1022,9 @@ ReturnExpression# :
     ]
 ;
 
-ContinueExpression : <CONTINUE_AT> | "continue" ;
+ContinueExpression# : <CONTINUE_AT> | "continue" ;
 
-BreakExpression : <BREAK_AT> | "break" ;
+BreakExpression# : <BREAK_AT> | "break" ;
 
 // TODO: interpolations, etc.
 StringLiteral# : <STRING_LITERAL> ;
