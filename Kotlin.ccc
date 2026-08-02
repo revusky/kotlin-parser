@@ -195,17 +195,22 @@ FunctionTypeParameters :
 Parameter : <IDENTIFIER> NLs ":" =>|| NLs [ContextParameters] Type ;
 
 ContextParameters :
-  'context' "(" Type ("," Type)* ")"
+  'context'
+  "("
+      [<IDENTIFIER> NLs ":" NLs =>||] Type
+      ("," [<IDENTIFIER> NLs ":" NLs =>||] Type)*
+  ")"
 ;
 
 #Expression#interface :
    Disjunction
+/*
    {
       if (!(peekNode() instanceof Expression)) {
           System.out.println(peekNode().getType());
           System.out.println(peekNode());
       }
-   }
+   }*/
    {return (Expression) peekNode();}
 ;
 
@@ -234,6 +239,7 @@ INJECT ObjectLiteral : implements PrimaryExpression
 INJECT ThisExpression : implements PrimaryExpression
 INJECT ContinueExpression : implements PrimaryExpression
 INJECT BreakExpression : implements PrimaryExpression
+INJECT CallableReference : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -265,6 +271,7 @@ ElvisExpression :
 InfixFunctionCall :
     RangeExpression
     (
+      ENSURE {peekNode().getEndLine() == getToken(1).getBeginLine()}
       <IDENTIFIER>
       NLs
       RangeExpression
@@ -307,12 +314,16 @@ Label :
 ;
 
 PostfixUnarySuffixLA#scan :
-   "++" | "--" | "!"|"["|"."|"::" | "(" | "{"
+  (
+   "++" | "--" | "!"|"["|"::" | "(" | "{" | "."
+   |
+   NLs "."
    |
    "?" "."
    |
    //REVISIT
    TypeArguments
+   )
 ;
 
 PostfixUnarySuffix#void :
@@ -320,20 +331,22 @@ PostfixUnarySuffix#void :
   (
     PostfixUnaryOperator
     |
+    NavigationSuffix
+    |
     CallSuffix
     |
     TypeArguments
     |
     IndexingSuffix
-    |
-    NavigationSuffix
   )
 ;
 
 PostfixUnaryOperator#void : "++" | "--" | "!" ;
 
 NavigationSuffix :
-    MemberAccessOperator NLs
+    NLs
+    MemberAccessOperator =>||
+    NLs
     (<IDENTIFIER> | ParenthesizedExpression | "class")
 ;
 
@@ -513,8 +526,11 @@ Block :
 ;
 
 DeclarationLA#scan :
+   //[ContextParameters]
    [Modifiers]
-   ( "class" | "fun" | "interface" | "object" | "val" | "var" | "typealias" | 'annotation')
+   ( "class" | "fun" | "interface"
+   | "object" | "val" | "var" | "typealias"
+   | 'annotation' | 'context')
 ;
 
 Declaration :
@@ -575,6 +591,7 @@ ObjectDeclaration :
 ;
 
 FunctionDeclaration :
+   [ContextParameters NLs] // Very bleeding edge
    [Modifiers]
    "fun" =>||
    [NLs =>|+1 TypeParameters]
