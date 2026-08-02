@@ -1,0 +1,3 @@
+*.class
+congo-templates.jar
+/build/*
