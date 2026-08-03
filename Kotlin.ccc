@@ -1109,7 +1109,10 @@ MultilineStringLiteral :
   '"""'
 ;
 
-LineStrExpression : "${" LEXICAL_STATE KOTLIN (Expression "}") ;
+LineStrExpression :
+    <LINE_STR_EXPRESSION_START>
+    LEXICAL_STATE KOTLIN (Expression "}")
+;
 
 MultilineInterpolation :
    <MULT_LINE_EXPRESSION_START>
