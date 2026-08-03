@@ -403,7 +403,6 @@ LambdaLiteral :
        [Semis]
        Statement
     )*
-//    Statements
     NLs
     "}"
 ;
@@ -451,14 +450,6 @@ Semis :
 Semi :
    (";"|<NL>)
    NLs
-;
-
-Statements :
-  [
-    Statement
-    (Semis =>|+1 Statement)*
-    [Semis]
-  ]
 ;
 
 Statement :
@@ -1078,15 +1069,37 @@ ContinueExpression# : <CONTINUE_AT> | "continue" ;
 
 BreakExpression# : <BREAK_AT> | "break" ;
 
-// TODO: interpolations, etc.
 StringLiteral# :
+    LineStringLiteral
+    |
+    MultilineStringLiteral
+;
+
+LineStringLiteral :
     '"'
     LEXICAL_STATE IN_REGULAR_STRING
     (<LINE_STRING_CONTENT>|LineStrExpression)*
     '"'
 ;
 
+MultilineStringLiteral :
+  <TRIPLE_QUOTE_OPEN>
+  LEXICAL_STATE IN_MULTILINE_STRING
+  (
+     <MULTI_LINE_TEXT>
+     |
+     MultilineInterpolation
+  )*
+  '"""'
+;
+
 LineStrExpression : "${" LEXICAL_STATE KOTLIN (Expression "}") ;
+
+MultilineInterpolation :
+   <MULT_LINE_EXPRESSION_START>
+   LEXICAL_STATE KOTLIN
+   ( Expression "}")
+;
 
 INJECT StringLiteral : implements Expression
 

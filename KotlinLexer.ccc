@@ -372,9 +372,7 @@ TOKEN #NumericalLiteral :
 ;
 
 TOKEN :
-   <TRIPLE_QUOTE : '"""'>
-   |
-   <DOLLAR_TRIPLE_QUOTE : ("$")+ <TRIPLE_QUOTE>>
+   <TRIPLE_QUOTE_OPEN : ("$")* '"""'>
    |
    <QUOTE : '"'>
 ;
@@ -395,6 +393,10 @@ TOKEN :
 <IN_MULTILINE_STRING>
 TOKEN :
    <TRIPLE_QUOTE_CLOSE : '"""' >
+   |
+   <MULT_LINE_EXPRESSION_START : ("$")+ "{">
+   |
+   <MULTI_LINE_TEXT : (~['"','$'])+ | "$" | '"'>
 ;
 
 INCLUDE JAVA_IDENTIFIER_DEF
