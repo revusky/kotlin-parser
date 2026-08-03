@@ -212,6 +212,10 @@ ContextParameters :
   ")"
 ;
 
+ExpressionNoLambda#void :
+   Expression
+;
+
 #Expression#interface :
    Disjunction
 /*
@@ -265,7 +269,14 @@ Comparison :
     (ComparisonOperator NLs GenericCallLikeComparison)*
 ;
 
-GenericCallLikeComparison : InfixOperation (ENSURE ("{") CallSuffix)* ;
+GenericCallLikeComparison :
+    InfixOperation
+    (
+      ENSURE ("{")
+      ENSURE ~\...\ExpressionNoLambda
+      CallSuffix
+    )*
+;
 
 InfixOperation :
    ElvisExpression
@@ -328,11 +339,14 @@ Label :
 
 PostfixUnarySuffixLA#scan :
   (
-   "++" | "--" | "!"|"["|"::" | "(" | "{" | "."
+   "++" | "--" | "!"|"["|"::" | "(" | "."
    |
    NLs "."
    |
    "?" "."
+   |
+   ENSURE ~\...\ExpressionNoLambda
+   "{"
    |
    //REVISIT
    TypeArguments
@@ -801,7 +815,8 @@ ExplicitDelegation :
    NLs
    'by' =>||
    NLs
-   Expression
+   //Expression
+   ExpressionNoLambda
 ;
 
 ClassMemberDeclarations : (ClassMemberDeclaration [Semis])* ;
