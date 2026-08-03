@@ -541,8 +541,11 @@ DeclarationLA#scan :
    |
    [Modifiers]
    ( "class" | "fun" | "interface"
-   | "object" | "val" | "var" | "typealias"
-   | 'annotation')
+      | "val" | "var" | "typealias"
+      | 'annotation'
+      |
+      "object" NLs <IDENTIFIER>
+   )
 ;
 
 Declaration :
@@ -595,9 +598,9 @@ ClassDeclaration :
 
 ObjectDeclaration :
     [Modifiers]
-    "object" =>||
+    "object"
     NLs
-    <IDENTIFIER>
+    <IDENTIFIER> =>||
     [NLs ":" =>|| NLs DelegationSpecifiers]
     [NLs =>|+1 ClassBody]
 ;
