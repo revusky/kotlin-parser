@@ -619,7 +619,8 @@ FunctionDeclaration :
 FunctionBody : Block | "=" NLs Expression ;
 
 Modifiers# :
-   (Annotation|Modifier)+
+   ENSURE ~(Modifier ":")
+   (Modifier|Annotation)+
 ;
 
 Modifier#void :

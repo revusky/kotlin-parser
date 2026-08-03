@@ -83,7 +83,7 @@ TOKEN #Operator :
    |
    <DISJ : "||">
    |
-   <EXCL_NO_WS : "!" >
+   <EXCLAM : "!" >
    |
 // TODO: TOKEN_HOOK?
 //   <EXCL_WS : "!">
@@ -201,7 +201,12 @@ TOKEN #Keyword :
    <IN : "in">
    |
    // TODO: next two must have WS after it.
-   <NOT_IS : "!is">
+   <NOT_IS : "!is"> {
+      if (Character.isJavaIdentifierPart(charAt(matchEnd))) {
+         matchedToken.truncate(2);
+         matchedToken = matchedToken.replaceType(EXCLAM);
+      }
+   }
    |
    <NOT_IN : "!in">
 ;
