@@ -57,6 +57,9 @@ UserType :
     (
       ENSURE ~\...\ReceiverType
       NLs "." NLs =>|+1 SimpleUserType
+      |
+      ENSURE \...\ReceiverType
+      NLs "." NLs SimpleUserType ENSURE (".") =>||
     )*
 ;
 
@@ -67,7 +70,7 @@ ValueArguments :
    NLs
    [
       ValueArgument
-      (NLs "," =>|+1 NLs ValueArgument)* [NLs "," =>||]
+      (NLs "," NLs =>|+1 ValueArgument)* [NLs "," =>||]
       NLs
    ]
    ")"
