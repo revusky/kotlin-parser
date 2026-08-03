@@ -989,8 +989,15 @@ ThisExpression# : "this" | <THIS_AT> ;
 SuperExpression :
     <SUPER_AT>
     |
-    // TODO: Look at whitespace
-    "super" ["<" NLs Type NLs ">"] "@" <IDENTIFIER>
+    "super" ["<" NLs Type NLs ">"]
+    [
+      ENSURE {
+         !Character.isWhitespace(getToken(1).charAt(-1))
+         && !Character.isWhitespace(getToken(1).charAt(1))
+      }
+      "@"
+      <IDENTIFIER>
+    ]
 ;
 
 AnonymousFunction :
