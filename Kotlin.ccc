@@ -257,6 +257,7 @@ INJECT ContinueExpression : implements PrimaryExpression
 INJECT BreakExpression : implements PrimaryExpression
 INJECT CallableReference : implements PrimaryExpression
 INJECT LambdaLiteral : implements PrimaryExpression
+INJECT CollectionLiteral : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -968,7 +969,14 @@ WhenExpression :
 ;
 
 WhenEntry :
-   WhenCondition (NLs "," =>|+1 NLs WhenCondition)* [NLs "," =>||]
+   WhenCondition
+   [NLs "if" =>||
+      Expression
+      ASSERT {getTokenType(1) != COMMA :
+             "Cannot have a guard condition in a comma-separated when entry"}
+   ]
+   (NLs "," =>|+1 NLs WhenCondition)*
+   [NLs "," =>||]
    NLs "->" NLs ControlStructureBody [Semis]
    |
    "else" NLs "->" NLs ControlStructureBody [Semis]
@@ -1088,9 +1096,11 @@ FinallyBlock : 'finally' NLs Block ;
 ThrowExpression : "throw" NLs Expression ;
 
 ReturnExpression# :
-    <RETURN_AT>
-    |
-    "return"
+    (
+      <RETURN_AT>
+      |
+      "return"
+    )
     [
       ENSURE ~(";"|<NL>)
       Expression
