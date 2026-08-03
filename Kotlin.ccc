@@ -416,6 +416,8 @@ LambdaParameter :
    MultiVariableDeclaration [NLs ":" =>|| NLs Type]
    |
    VariableDeclaration
+   |
+   "_"
 ;
 
 VariableDeclaration : (Annotation)* NLs <IDENTIFIER> [NLs ":" =>|| NLs Type] ;
