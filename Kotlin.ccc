@@ -289,7 +289,7 @@ AdditiveExpression : MultiplicativeExpression (("+"|"-") NLs MultiplicativeExpre
 
 MultiplicativeExpression : AsExpression (("*"|"/"|"%") NLs AsExpression)* ;
 
-AsExpression : PrefixUnaryExpression (NLs "as" =>|| NLs Type)* ;
+AsExpression : PrefixUnaryExpression (NLs ("as"|"as?") =>|| NLs Type)* ;
 
 PrefixUnaryExpression :
     (ENSURE {getTokenType(1) != IDENTIFIER || getTokenType(2) == AT} UnaryPrefix)*
