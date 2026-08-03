@@ -343,6 +343,7 @@ PostfixUnarySuffixLA#scan :
    |
    NLs "."
    |
+   ENSURE {getToken(1).getEndOffset() == getToken(2).getBeginOffset()}
    "?" "."
    |
    ENSURE ~\...\ExpressionNoLambda
@@ -447,7 +448,7 @@ MultiVariableDeclaration :
     "("
     NLs
     VariableDeclaration
-    (NLs "," NLs =>|+1 VariableDeclaration)*
+    (NLs "," NLs =>|+1 ("_" | VariableDeclaration))*
     [NLs "," =>||]
     NLs
     ")"
