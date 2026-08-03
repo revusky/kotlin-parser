@@ -48,7 +48,13 @@ ImportDeclaration :
     Semis
 ;
 
-UnescapedAnnotation : UserType [ValueArguments #ConstructorInvocation(2)] ;
+UnescapedAnnotation :
+    UserType
+    [
+      ENSURE ~(ValueArguments "->")
+      ValueArguments #ConstructorInvocation(2)
+    ]
+;
 
 ConstructorInvocation : UserType NLs =>|+1 ValueArguments;
 
