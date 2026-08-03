@@ -338,20 +338,18 @@ Label :
 ;
 
 PostfixUnarySuffixLA#scan :
-  (
-   "++" | "--" | "!"|"["|"::" | "(" | "."
+   "++" | "--" | "!"|"["|"::" | "("
    |
-   NLs "."
+   NLs "." =>||
    |
-   ENSURE {getToken(1).getEndOffset() == getToken(2).getBeginOffset()}
-   "?" "."
+   NLs "?" "."
+   ENSURE {getToken(-1).getEndOffset() == getToken(0).getBeginOffset()}
    |
    ENSURE ~\...\ExpressionNoLambda
    "{"
    |
    //REVISIT
    TypeArguments
-   )
 ;
 
 PostfixUnarySuffix#void :
@@ -373,8 +371,8 @@ PostfixUnaryOperator#void : "++" | "--" | "!" ;
 
 NavigationSuffix :
     NLs
-    MemberAccessOperator =>||
-    NLs
+    MemberAccessOperator
+    NLs =>||
     (<IDENTIFIER> | ParenthesizedExpression | "class")
 ;
 
@@ -399,14 +397,13 @@ CallSuffix :
 ;
 
 MemberAccessOperator :
-   "."
-   |
-   "::"
-   |
-   "?"
-   ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
-   "."
-   =>||
+   (
+      "."
+      |
+      "::"
+      |
+      "?" "."
+   )
 ;
 
 AnnotatedLambda : (Annotation)* [Label] NLs =>|+1 LambdaLiteral ;

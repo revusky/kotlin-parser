@@ -200,7 +200,6 @@ TOKEN #Keyword :
    |
    <IN : "in">
    |
-   // TODO: next two must have WS after it.
    <NOT_IS : "!is"> {
       if (Character.isJavaIdentifierPart(charAt(matchEnd))) {
          matchedToken.truncate(2);
@@ -208,7 +207,12 @@ TOKEN #Keyword :
       }
    }
    |
-   <NOT_IN : "!in">
+   <NOT_IN : "!in"> {
+      if (Character.isJavaIdentifierPart(charAt(matchEnd))) {
+         matchedToken.truncate(2);
+         matchedToken = matchedToken.replaceType(EXCLAM);
+      }
+   }
 ;
 
 CONTEXTUAL :
