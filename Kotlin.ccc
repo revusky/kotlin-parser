@@ -51,7 +51,8 @@ ImportDeclaration :
 UnescapedAnnotation :
     UserType
     [
-      ENSURE ~(ValueArguments "->")
+      // Somewhat kludgy. REVISIT
+      ENSURE (ValueArguments ENSURE ~("->"))
       ValueArguments #ConstructorInvocation(2)
     ]
 ;
