@@ -116,19 +116,9 @@ TOKEN #Operator :
    |
    <HASH : "#">
    |
-   // TODO figure these arobas out later.
-   // Probably use a TOKEN_HOOK
-   <AT_NO_WS : "@">
-//   |
-//   <AT_POST_WS : "@">
-//   |
-//   <AT_PRE_WS : "@">
-//   |
-//   <AT_BOTH_WS : "@">
+   <AT : "@">
    |
-   <QUEST_NO_WS : "?">
-//   |
-//   <QUEST_WS : "?" >
+   <QUEST : "?">
    |
    <LANGLE : "<">
    |
@@ -334,9 +324,9 @@ TOKEN #Literal :
    <#ESCAPE_SEQ : <UNICODE_ESCAPE>|<CHAR_ESCAPE>>
    |
    <CHARACTER_LITERAL : "'" (<ESCAPE_SEQ>|~["\r","\n","'","\\"]) "'"> #CharacterLiteral
-   |
+  // |
    // TODO: This is a stopgap because we need to handle interpolations
-   <STRING_LITERAL : '"' (<ESCAPE_SEQ>|~["\r","\n",'"',"\\"])* '"'>
+//   <STRING_LITERAL : '"' (<ESCAPE_SEQ>|~["\r","\n",'"',"\\"])* '"'>
 ;
 
 TOKEN #NumericalLiteral :
@@ -379,6 +369,32 @@ TOKEN #NumericalLiteral :
    <UNSIGNED_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) ["u", "U"] ("L")?>
    |
    <LONG_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) "L">
+;
+
+TOKEN :
+   <TRIPLE_QUOTE : '"""'>
+   |
+   <DOLLAR_TRIPLE_QUOTE : ("$")+ <TRIPLE_QUOTE>>
+   |
+   <QUOTE : '"'>
+;
+
+<IN_REGULAR_STRING>
+TOKEN :
+   <#LINE_STR_TEXT : (~['\\','"','$'])+ | "$">
+   |
+   <#FIELD_IDENTIFIER : "$" <IDENTIFIER>>
+   |
+   <#QUOTE_CLOSE : '"'>
+   |
+   <LINE_STRING_CONTENT : (<LINE_STR_TEXT>|<FIELD_IDENTIFIER>|<CHAR_ESCAPE>|<UNICODE_ESCAPE>)+>
+   |
+   <LINE_STR_EXPRESSION_START : "${">
+;
+
+<IN_MULTILINE_STRING>
+TOKEN :
+   <TRIPLE_QUOTE_CLOSE : '"""' >
 ;
 
 INCLUDE JAVA_IDENTIFIER_DEF

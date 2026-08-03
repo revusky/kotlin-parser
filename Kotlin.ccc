@@ -241,6 +241,7 @@ INJECT ThisExpression : implements PrimaryExpression
 INJECT ContinueExpression : implements PrimaryExpression
 INJECT BreakExpression : implements PrimaryExpression
 INJECT CallableReference : implements PrimaryExpression
+INJECT LambdaLiteral : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -288,7 +289,7 @@ MultiplicativeExpression : AsExpression (("*"|"/"|"%") NLs AsExpression)* ;
 AsExpression : PrefixUnaryExpression (NLs "as" =>|| NLs Type)* ;
 
 PrefixUnaryExpression :
-    (ENSURE {getTokenType(1) != IDENTIFIER || getTokenType(2) == AT_NO_WS} UnaryPrefix)*
+    (ENSURE {getTokenType(1) != IDENTIFIER || getTokenType(2) == AT} UnaryPrefix)*
     PostfixUnaryExpression
 ;
 
@@ -1073,7 +1074,14 @@ ContinueExpression# : <CONTINUE_AT> | "continue" ;
 BreakExpression# : <BREAK_AT> | "break" ;
 
 // TODO: interpolations, etc.
-StringLiteral# : <STRING_LITERAL> ;
+StringLiteral# :
+    '"'
+    LEXICAL_STATE IN_REGULAR_STRING
+    (<LINE_STRING_CONTENT>|LineStrExpression)*
+    '"'
+;
+
+LineStrExpression : "${" LEXICAL_STATE KOTLIN (Expression "}") ;
 
 INJECT StringLiteral : implements Expression
 
