@@ -62,6 +62,10 @@ ConstructorInvocation : UserType NLs =>|+1 ValueArguments;
 UserType :
     SimpleUserType
     (
+// The following cases are really a bit kludgy. REVISIT
+      ENSURE \...\TypeArguments
+      NLs "." NLs =>|+1 SimpleUserType
+      |
       ENSURE ~\...\ReceiverType
       NLs "." NLs =>|+1 SimpleUserType
       |
@@ -682,7 +686,7 @@ PropertyDeclaration :
 // [NLs ";" =>||]
   [
      NLs
-     ENSURE ([";"] [Modifiers] ('get'|'set'))
+     ENSURE ([";"] [Modifiers] ('get'|'set') ENSURE ~(MemberAccessOperator))
      =>||
      (
         Getter [NLs [Semi] ENSURE ([Modifiers] 'set') =>|| Setter]
@@ -928,7 +932,12 @@ LiteralConstant#void :
    <LONG_LITERAL> | <UNSIGNED_LITERAL>
 ;
 
-CallableReference : [ReceiverType] "::" =>|| NLs (<IDENTIFIER> | "class") ;
+CallableReference :
+   [([TypeModifiers] NullableType) #ReceiverType]
+   "::" =>||
+   NLs
+   (<IDENTIFIER> | "class")
+;
 
 ObjectLiteral# :
    ['data']
