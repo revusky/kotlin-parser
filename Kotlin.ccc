@@ -861,9 +861,7 @@ FunctionValueParameter :
 ;
 
 ParameterModifiers :
-    Annotation
-    |
-    ParameterModifier (Annotation|ParameterModifier)*
+    (Annotation|ParameterModifier)+
 ;
 
 ParameterModifier#void : 'vararg' | 'noinline' | 'crossinline' ;
