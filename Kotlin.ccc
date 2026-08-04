@@ -535,7 +535,7 @@ DoWhileStatement :
    ")"
 ;
 
-ControlStructureBody : Block | Statement ;
+ControlStructureBody#void : Block | Statement ;
 
 Block :
    "{"
@@ -1046,7 +1046,6 @@ IfExpression :
       "else"
       NLs
       (ControlStructureBody | ";")
-      NLs
    ]
 ;
 
