@@ -96,7 +96,7 @@ public class KParse {
             if (paths.size()==1) {
                 root.dump("");
             }
-            System.out.println(" Success");
+            if (!quiet) System.out.println(" Success");
             successes.add(path);
             if (successes.size() % 1000 == 0) {
                 System.out.println("Successfully parsed " + successes.size() + " files...");

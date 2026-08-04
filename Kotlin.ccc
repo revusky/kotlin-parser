@@ -482,6 +482,8 @@ Statement :
     |
     DoWhileStatement
     |
+    FunctionDeclaration
+    |
     Assignment
     |
     Declaration
@@ -1009,8 +1011,9 @@ SuperExpression :
 AnonymousFunction :
    ['suspend']
    NLs
-   "fun" =>||
-   [NLs =>|+1 Type NLs "."]
+   "fun"
+   =>||
+   [NLs Type NLs "." =>||]
    NLs
    ParameterWithOptionalType
    [NLs ":" =>|| NLs Type]
