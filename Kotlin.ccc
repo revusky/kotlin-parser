@@ -964,7 +964,7 @@ WhenEntry :
    "else" NLs "->" NLs ControlStructureBody [Semis]
 ;
 
-WhenCondition :
+WhenCondition:
    Expression
    |
    RangeTest
@@ -1033,6 +1033,7 @@ IfExpression :
    (ControlStructureBody | ";")
    NLs
    [
+      ENSURE {getTokenType(2) != ARROW}
       "else"
       NLs
       (ControlStructureBody | ";")
