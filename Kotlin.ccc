@@ -70,7 +70,7 @@ UserType :
       NLs "." NLs =>|+1 SimpleUserType
       |
       ENSURE \...\ReceiverType
-      NLs "." NLs SimpleUserType ENSURE (".") =>||
+      NLs "." NLs SimpleUserType ENSURE (("?")* ".") =>||
     )*
 ;
 
@@ -165,7 +165,7 @@ FunctionType :
    Type
 ;
 
-ReceiverType :
+ReceiverType# :
    [TypeModifiers]
    NullableType
 ;
