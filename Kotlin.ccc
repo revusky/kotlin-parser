@@ -262,6 +262,7 @@ INJECT BreakExpression : implements PrimaryExpression
 INJECT CallableReference : implements PrimaryExpression
 INJECT LambdaLiteral : implements PrimaryExpression
 INJECT CollectionLiteral : implements PrimaryExpression
+INJECT AnonymousFunction : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -330,14 +331,13 @@ EqualityOperator#void : "!=" | "!==" | "==" | "===" ;
 
 ComparisonOperator#void : "<" | "<=" | ">=" | ">" ;
 
-// TODO: Need a token lexical action to deal with NOT_IN and NOT_IS
 InOperator#void : "in" | "!in" ;
 
 IsOperator#void : "is" | "!is";
 
 Label :
    <IDENTIFIER>
-   ENSURE {getToken(0).getEndOffset() == getToken(1).getBeginOffset() }
+   ENSURE { !Character.isWhitespace(getToken(1).charAt(-1)) }
    "@" =>||
    NLs
 ;
@@ -393,11 +393,12 @@ IndexingSuffix :
 
 CallSuffix :
     [TypeArguments]
-    =>|+1
+    ENSURE ("(" | (Annotation)* [Label=>||] "{" )
+    =>||
     (
-        AnnotatedLambda
-        |
         ValueArguments [AnnotatedLambda]
+        |
+        AnnotatedLambda
     )
 ;
 
@@ -1036,10 +1037,20 @@ AnonymousFunction :
    =>||
    [NLs Type NLs "." =>||]
    NLs
-   ParameterWithOptionalType
+   ParametersWithOptionalType
    [NLs ":" =>|| NLs Type]
    [NLs =>|+1 TypeConstraints]
    [NLs =>|+1 FunctionBody]
+;
+
+ParametersWithOptionalType :
+  "("
+  NLs
+  FunctionValueParameterWithOptionalType
+  (NLs "," NLs =>|+1 FunctionValueParameterWithOptionalType)*
+  [NLs "," =>|| NLs]
+  NLs
+  ")"
 ;
 
 IfExpression :
