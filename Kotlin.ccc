@@ -12,7 +12,7 @@ KotlinFile :
   (FileAnnotation)*
   [PackageDeclaration]
   (ImportDeclaration)*
-  (TopLevelObject)*
+  (SCAN ~(<EOF>) => TopLevelObject)*
   <EOF>
 ;
 
@@ -542,26 +542,9 @@ Block :
    "}"
 ;
 
-DeclarationLA#scan :
-   // The following is a bit horrific,
-   // but it seems necessary
-   ContextParameters
-   NLs
-   [Modifiers]
-   "fun" =>||
-   |
-   [Modifiers]
-   ( "class" | "fun" | "interface"
-      | "val" | "var" | "typealias"
-      | 'annotation'
-      |
-      "object" NLs <IDENTIFIER>
-   )
-;
-
 Declaration :
-  SCAN DeclarationLA =>
-  (
+    TypeAlias
+    |
     ClassDeclaration
     |
     ObjectDeclaration
@@ -569,9 +552,6 @@ Declaration :
     FunctionDeclaration
     |
     PropertyDeclaration
-    |
-    TypeAlias
-  )
 ;
 
 ClassDeclaration :
@@ -821,13 +801,13 @@ ExplicitDelegation :
 ClassMemberDeclarations : (ClassMemberDeclaration [Semis])* ;
 
 ClassMemberDeclaration :
-   Declaration
-   |
    CompanionObject
    |
    AnonymousInitializer
    |
    SecondaryConstructor
+   |
+   Declaration
 ;
 
 AnonymousInitializer : 'init' NLs Block ;
