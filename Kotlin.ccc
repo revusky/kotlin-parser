@@ -476,17 +476,15 @@ Semi :
 Statement :
    (Label|Annotation)*
    (
-    Declaration
-    |
-    Assignment
-    |
     ForStatement
     |
     WhileStatement
     |
     DoWhileStatement
     |
-    Expression
+    Assignment
+    |
+    Declaration
    )
 ;
 
@@ -781,9 +779,11 @@ EnumClassBody :
 // TODO: Deal with the lhs being assignable
 Assignment :
     Expression
-    AssignmentOperator =>||
-    NLs
-    Expression
+    [
+       AssignmentOperator
+       NLs
+       Expression
+    ]
 ;
 
 AssignmentOperator#void : "=" | "+=" | "-=" | "*=" | "/=" | "%=" ;
