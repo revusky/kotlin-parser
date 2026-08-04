@@ -8,7 +8,7 @@ TOKEN :
 ;
 
 SKIP :
-   <WS : " " | "\t" | "f">
+   <WS : " " | "\t" | "\f">
 ;
 
 UNPARSED #Comment :
@@ -409,11 +409,13 @@ TOKEN :
 ;
 
 INCLUDE "KotlinIdentifierDef.ccc"
+//INCLUDE JAVA_IDENTIFIER_DEF
 
 TOKEN #Identifier :
    <#REGULAR_IDENTIFIER : <KOTLIN_IDENTIFIER_START> (<KOTLIN_IDENTIFIER_PART>)*>
+   //<#REGULAR_IDENTIFIER : <JAVA_IDENTIFIER_START> (<JAVA_IDENTIFIER_PART>)*>
    |
-   <#BACK_QUOTE_IDENTIFIER : '`' (~['`'])+ '`'>
+   <#BACK_QUOTE_IDENTIFIER : '`' (~['`','\r','\n'])+ '`'>
    |
    <IDENTIFIER : <REGULAR_IDENTIFIER> | <BACK_QUOTE_IDENTIFIER>>
 ;
