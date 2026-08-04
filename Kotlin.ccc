@@ -449,8 +449,21 @@ VariableDeclaration : (Annotation)* NLs <IDENTIFIER> [NLs ":" =>|| NLs Type] ;
 MultiVariableDeclaration :
     "("
     NLs
-    ("_" | VariableDeclaration)
-    (NLs "," NLs =>|+1 ("_" | VariableDeclaration))*
+    (
+      "_" [NLs ":" =>|| NLs Type]
+      |
+      VariableDeclaration
+    )
+    (
+      NLs
+      ","
+      NLs =>|+1
+      (
+         "_" [NLs ":" =>|| NLs Type]
+         |
+         VariableDeclaration
+      )
+    )*
     [NLs "," =>||]
     NLs
     ")"
