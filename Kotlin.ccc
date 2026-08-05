@@ -529,6 +529,7 @@ ForStatement :
    )
    "in"
    Expression
+   NLs
    ")"
    NLs
    [ControlStructureBody]
@@ -538,7 +539,9 @@ WhileStatement :
     "while"
     NLs
     "("
+    NLs
     Expression
+    NLs
     ")"
     NLs
     (ControlStructureBody | ";")
