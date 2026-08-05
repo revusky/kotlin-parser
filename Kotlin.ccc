@@ -626,11 +626,12 @@ ObjectDeclaration :
 FunctionDeclaration :
    [ContextParameters NLs] // Very bleeding edge
    [Modifiers]
-   "fun" =>||
+   "fun" // =>||
    [NLs =>|+1 TypeParameters]
    [NLs ReceiverType NLs "." =>||]
    NLs
    <IDENTIFIER>
+   =>||
    NLs
    FunctionValueParameters
    [NLs ":" =>|| NLs Type]
@@ -925,13 +926,13 @@ EnumEntry :
 ;
 
 PrimaryExpression#interface :
-   <IDENTIFIER>
-   |
    LiteralConstant
    |
    StringLiteral
    |
    CallableReference
+   |
+   <IDENTIFIER>
    |
    ParenthesizedExpression
    |
@@ -1061,9 +1062,10 @@ AnonymousFunction :
    ['suspend']
    NLs
    "fun"
-   =>||
+   // =>||
    [NLs Type NLs "." =>||]
    NLs
+   =>|+1
    ParametersWithOptionalType
    [NLs ":" =>|| NLs Type]
    [NLs =>|+1 TypeConstraints]
@@ -1073,9 +1075,11 @@ AnonymousFunction :
 ParametersWithOptionalType :
   "("
   NLs
-  FunctionValueParameterWithOptionalType
-  (NLs "," NLs =>|+1 FunctionValueParameterWithOptionalType)*
-  [NLs "," =>|| NLs]
+  [
+   FunctionValueParameterWithOptionalType
+   (NLs "," NLs =>|+1 FunctionValueParameterWithOptionalType)*
+   [NLs "," =>|| NLs]
+  ]
   NLs
   ")"
 ;
