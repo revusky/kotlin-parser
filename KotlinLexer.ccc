@@ -135,8 +135,6 @@ TOKEN #Operator :
    <AS_SAFE : "as?">
    |
    <EQ_EQ : "==">
-   |
-   <SINGLE_QUOTE : "'">
 ;
 
 TOKEN #Keyword :
@@ -380,21 +378,44 @@ TOKEN #NumericalLiteral :
    <LONG_LITERAL : (<INTEGER_LITERAL>|<HEX_LITERAL>|<BIN_LITERAL>) "L">
 ;
 
+INJECT LEXER_CLASS : {
+   private int numDollars, openingDollars;
+   private int countOpeningDollars(CharSequence seq) {
+      for (int i = 0; i<seq.length();i++) {
+         if (seq.charAt(i) != '$') return i;
+      }
+      return seq.length();
+   }
+}
+
 TOKEN :
-   <TRIPLE_QUOTE_OPEN : ("$")* '"""'>
+   <TRIPLE_QUOTE_OPEN : ("$")* '"""'> {
+      numDollars = matchedToken.toString().indexOf('"');
+   }
    |
-   <QUOTE : '"'>
+   <SINGLE_QUOTE_OPEN : ("$")* '"'> {
+      numDollars = matchedToken.toString().indexOf('"');
+   }
 ;
 
 <IN_REGULAR_STRING>
 TOKEN :
    <#LINE_STR_TEXT : (~['\\','"','$'])+ | "$">
    |
-   <#FIELD_IDENTIFIER : "$" <IDENTIFIER>>
+   <SINGLE_QUOTE_CLOSE : '"'>
    |
-   <#QUOTE_CLOSE : '"'>
+   <FIELD_IDENTIFIER : ("$")+ <IDENTIFIER>> {
+      openingDollars = countOpeningDollars(matchedToken);
+      if (openingDollars < numDollars) {
+         matchedToken.setType(LINE_STRING_CONTENT);
+      }
+      else if (openingDollars > this.numDollars) {
+         matchedToken.setEndOffset(matchedToken.getBeginOffset() + openingDollars - numDollars);
+         matchedToken.setType(LINE_STRING_CONTENT);
+      }
+   }
    |
-   <LINE_STRING_CONTENT : <LINE_STR_TEXT>|<FIELD_IDENTIFIER>|<CHAR_ESCAPE>|<UNICODE_ESCAPE>>
+   <LINE_STRING_CONTENT : <LINE_STR_TEXT>|<CHAR_ESCAPE>|<UNICODE_ESCAPE>>
    |
    <LINE_STR_EXPRESSION_START : "${">
 ;
@@ -403,17 +424,24 @@ TOKEN :
 TOKEN :
    <TRIPLE_QUOTE_CLOSE : '"""' >
    |
-   <MULT_LINE_EXPRESSION_START : ("$")+ "{">
-   |
    <MULTI_LINE_TEXT : (~['"','$'])+ | "$" | '"'>
+   |
+   <MULT_LINE_EXPRESSION_START : ("$")+ "{"> {
+      openingDollars = countOpeningDollars(matchedToken);
+      if (openingDollars < numDollars) {
+         matchedToken.setType(MULTI_LINE_TEXT);
+      }
+      else if (openingDollars > numDollars) {
+         matchedToken.setEndOffset(matchedToken.getBeginOffset() + openingDollars - numDollars);
+         matchedToken.setType(MULTI_LINE_TEXT);
+      }
+   }
 ;
 
 INCLUDE "KotlinIdentifierDef.ccc"
-//INCLUDE JAVA_IDENTIFIER_DEF
 
 TOKEN #Identifier :
    <#REGULAR_IDENTIFIER : <KOTLIN_IDENTIFIER_START> (<KOTLIN_IDENTIFIER_PART>)*>
-   //<#REGULAR_IDENTIFIER : <JAVA_IDENTIFIER_START> (<JAVA_IDENTIFIER_PART>)*>
    |
    <#BACK_QUOTE_IDENTIFIER : '`' (~['`','\r','\n'])+ '`'>
    |

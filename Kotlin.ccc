@@ -1,4 +1,5 @@
 DEFAULT_LEXICAL_STATE=KOTLIN;
+
 DEACTIVATE_TOKENS = SHEBANG;
 TAB_SIZE=4;
 ENSURE_FINAL_EOL;
@@ -217,10 +218,6 @@ ContextParameters :
   ")"
 ;
 
-ExpressionNoLambda#void :
-   Expression
-;
-
 #Expression#interface :
    Disjunction
 /*
@@ -280,7 +277,7 @@ GenericCallLikeComparison :
     InfixOperation
     (
       ENSURE ("{")
-      ENSURE ~\...\ExpressionNoLambda
+      ENSURE {!isInExplicitDelegateAndNotParenthesized()}
       CallSuffix
       |
       ENSURE ("(")
@@ -354,7 +351,7 @@ PostfixUnarySuffixLA#scan :
    NLs "?" "."
    ENSURE {getToken(-1).getEndOffset() == getToken(0).getBeginOffset()}
    |
-   ENSURE ~\...\ExpressionNoLambda
+   ENSURE {!isInExplicitDelegateAndNotParenthesized()}
    [Label]
    "{"
    |
@@ -401,9 +398,13 @@ CallSuffix :
     ENSURE ("(" | (Annotation)* [Label=>||] "{" )
     =>||
     (
-        ValueArguments [ENSURE ~\...\ExpressionNoLambda AnnotatedLambda]
+        ValueArguments
+        [
+           ENSURE {!isInExplicitDelegateAndNotParenthesized()}
+           AnnotatedLambda
+        ]
         |
-        ENSURE ~\...\ExpressionNoLambda
+        ENSURE {!isInExplicitDelegateAndNotParenthesized()}
         AnnotatedLambda
     )
 ;
@@ -820,9 +821,29 @@ ExplicitDelegation :
    NLs
    'by' =>||
    NLs
-   //Expression
-   ExpressionNoLambda
+   Expression
 ;
+
+INJECT PARSER_CLASS : {
+    private boolean isInExplicitDelegateAndNotParenthesized() {
+        ListIterator<NonTerminalCall> it = stackIteratorBackward();
+        while (it.hasNext()) {
+            // NB. These strings are interned so we can just
+            // use identity comparison.
+            String caller = it.next().productionName;
+            if (caller == "ExplicitDelegation") return true;
+            if (
+                   caller == "ParentheticalExpression"
+                || caller == "ValueArguments"
+            ) {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
+
 
 ClassMemberDeclarations : (ClassMemberDeclaration [Semis])* ;
 
@@ -1139,10 +1160,12 @@ StringLiteral# :
 ;
 
 LineStringLiteral :
-    '"'
+    <SINGLE_QUOTE_OPEN>
     LEXICAL_STATE IN_REGULAR_STRING
-    (<LINE_STRING_CONTENT>|LineStrExpression)*
-    '"'
+    (
+       (<LINE_STRING_CONTENT>|<FIELD_IDENTIFIER>|LineStrExpression)*
+       <SINGLE_QUOTE_CLOSE>
+    )
 ;
 
 MultilineStringLiteral :
