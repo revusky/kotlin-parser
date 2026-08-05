@@ -708,7 +708,7 @@ PropertyDeclaration :
 // [NLs ";" =>||]
   [
      NLs
-     ENSURE ([";"] [Modifiers] ('get'|'set') ENSURE ~(MemberAccessOperator))
+     ENSURE ([";"] [Modifiers] (Getter|Setter) ENSURE ~(MemberAccessOperator))
      =>||
      (
         Getter [NLs [Semi] ENSURE ([Modifiers] 'set') =>|| Setter]
@@ -722,7 +722,8 @@ PropertyDeclaration :
 
 Getter :
    [Modifiers]
-   'get' =>||
+   'get'
+   =>||
    [
       NLs
       "(" =>||
