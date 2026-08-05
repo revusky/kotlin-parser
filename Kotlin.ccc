@@ -354,6 +354,7 @@ PostfixUnarySuffixLA#scan :
    ENSURE {getToken(-1).getEndOffset() == getToken(0).getBeginOffset()}
    |
    ENSURE ~\...\ExpressionNoLambda
+   [Label]
    "{"
    |
    //REVISIT
