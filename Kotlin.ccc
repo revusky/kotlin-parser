@@ -25,8 +25,9 @@ NLs#void : (<NL> {popNode();})* ;
 FileAnnotation :
    "@"
    ENSURE {!Character.isWhitespace(token_source.charAt(getToken(0).getEndOffset()))}
+   'file'
    =>||
-   'file' NLs ":" NLs
+   NLs ":" NLs
     (
         "[" (UnescapedAnnotation)+ "]"
         |
@@ -304,7 +305,7 @@ ElvisExpression :
 InfixFunctionCall :
     RangeExpression
     (
-      ENSURE {peekNode().getEndLine() == getToken(1).getBeginLine()}
+      ENSURE {peekNode() != null && peekNode().getEndLine() == getToken(1).getBeginLine()}
       <IDENTIFIER>
       NLs
       RangeExpression
