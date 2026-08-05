@@ -832,11 +832,13 @@ INJECT PARSER_CLASS : {
             // NB. These strings are interned so we can just
             // use identity comparison.
             String caller = it.next().productionName;
-            if (caller == "ExplicitDelegation") return true;
-            if (
-                   caller == "ParentheticalExpression"
-                || caller == "ValueArguments"
-            ) {
+            if (caller == "ExplicitDelegation")
+            {
+               return true;
+            }
+            if (caller == "ParentheticalExpression"
+                || caller == "ValueArguments")
+            {
                 return false;
             }
         }
@@ -1094,10 +1096,11 @@ IfExpression :
    ")"
    NLs
    (ControlStructureBody | ";")
-   NLs
    [
-      ENSURE {getTokenType(2) != ARROW}
+       NLs
       "else"
+      ENSURE ~("->")
+      =>||
       NLs
       (ControlStructureBody | ";")
    ]
