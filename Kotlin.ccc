@@ -742,7 +742,11 @@ Setter :
       NLs
       "(" =>||
       NLs
-      FunctionValueParameterWithOptionalType [NLs "," =>||]
+      (
+         "_"
+         |
+         FunctionValueParameterWithOptionalType [NLs "," =>||]
+      )
       NLs
       ")"
       [NLs ":" =>|| NLs Type]
