@@ -281,6 +281,9 @@ GenericCallLikeComparison :
       ENSURE ("{")
       ENSURE ~\...\ExpressionNoLambda
       CallSuffix
+      |
+      ENSURE ("(")
+      CallSuffix
     )*
 ;
 
@@ -321,7 +324,7 @@ PrefixUnaryExpression :
     PostfixUnaryExpression
 ;
 
-UnaryPrefix#void : Annotation | PrefixUnaryOperator NLs | Label ;
+UnaryPrefix#void : Label | Annotation | PrefixUnaryOperator NLs ;
 
 PrefixUnaryOperator#void : "++" | "--" | "-" | "+" | "!" ;
 
@@ -396,8 +399,9 @@ CallSuffix :
     ENSURE ("(" | (Annotation)* [Label=>||] "{" )
     =>||
     (
-        ValueArguments [AnnotatedLambda]
+        ValueArguments [ENSURE ~\...\ExpressionNoLambda AnnotatedLambda]
         |
+        ENSURE ~\...\ExpressionNoLambda
         AnnotatedLambda
     )
 ;
