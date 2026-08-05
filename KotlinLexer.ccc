@@ -85,9 +85,6 @@ TOKEN #Operator :
    |
    <EXCLAM : "!" >
    |
-// TODO: TOKEN_HOOK?
-//   <EXCL_WS : "!">
-//   |
    <COLON : ":">
    |
    <ASSIGN : "=">

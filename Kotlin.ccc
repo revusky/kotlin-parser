@@ -1069,7 +1069,6 @@ AnonymousFunction :
    ['suspend']
    NLs
    "fun"
-   // =>||
    [NLs Type NLs "." =>||]
    NLs
    =>|+1
@@ -1165,7 +1164,10 @@ ContinueExpression# : <CONTINUE_AT> | "continue" ;
 
 BreakExpression# : <BREAK_AT> | "break" ;
 
-StringLiteral# :
+INJECT LineStringLiteral : extends StringLiteral
+INJECT MultilineStringLiteral : extends StringLiteral
+
+StringLiteral#abstract :
     LineStringLiteral
     |
     MultilineStringLiteral
@@ -1184,22 +1186,24 @@ MultilineStringLiteral :
   <TRIPLE_QUOTE_OPEN>
   LEXICAL_STATE IN_MULTILINE_STRING
   (
-     <MULTI_LINE_TEXT>
-     |
-     MultilineInterpolation
-  )*
-  '"""'
+   (
+      <MULTI_LINE_TEXT>
+      |
+      MultilineInterpolation
+   )*
+   <TRIPLE_QUOTE_CLOSE>
+  )
 ;
 
 LineStrExpression :
     <LINE_STR_EXPRESSION_START>
-    LEXICAL_STATE KOTLIN (Expression "}")
+    LEXICAL_STATE KOTLIN (NLs Expression NLs "}")
 ;
 
 MultilineInterpolation :
    <MULT_LINE_EXPRESSION_START>
    LEXICAL_STATE KOTLIN
-   ( Expression "}")
+   ( NLs Expression NLs "}")
 ;
 
 INJECT StringLiteral : implements Expression
