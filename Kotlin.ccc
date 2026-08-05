@@ -288,9 +288,12 @@ GenericCallLikeComparison :
 InfixOperation :
    ElvisExpression
    (
-      InOperator NLs ElvisExpression
-      |
-      IsOperator NLs Type
+      ENSURE {getTokenType(0) != NL}
+      (
+        InOperator NLs ElvisExpression
+        |
+        IsOperator NLs Type
+      )
    )*
 ;
 
@@ -708,7 +711,6 @@ PropertyDeclaration :
     PropertyDelegate
    )
   ]
-// [NLs ";" =>||]
   [
      NLs
      ENSURE ([";"] [Modifiers] (Getter|Setter) ENSURE ~(MemberAccessOperator))
