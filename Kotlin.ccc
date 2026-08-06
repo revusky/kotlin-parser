@@ -248,7 +248,7 @@ INJECT CallExpression : implements Expression
 
 INJECT ParenthesizedExpression : implements Expression {
    public boolean canBeAssignedTo() {
-      return ((Expression) get(0)).canBeAssignedTo();
+      return ((Expression) get(1)).canBeAssignedTo();
    }
 }
 
@@ -741,7 +741,7 @@ PropertyDeclaration :
   =>||
   [NLs =>|+1 TypeParameters]
   [NLs ReceiverType NLs "." =>||]
-  (NLs (MultiVariableDeclaration | VariableDeclaration))
+  (NLs (MultiVariableDeclaration | VariableDeclaration |"_"))
   [NLs =>|+1 TypeConstraints]
   [
    NLs =>|+1
@@ -858,7 +858,6 @@ EnumClassBody :
     "}"
 ;
 
-// TODO: Deal with the lhs being assignable
 Assignment :
     {
       Expression lhs;
