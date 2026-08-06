@@ -649,15 +649,20 @@ FunctionBody : Block | "=" NLs Expression ;
 
 Modifiers# :
    ENSURE ~(Modifier ":")
-   (Modifier|Annotation)+
+   (
+      ENSURE ~\EnumEntry
+      Modifier
+      |
+      Annotation
+   )+
 ;
 
 Modifier#void :
-   'enum' | 'sealed' | 'annotation' | 'data' | 'inner' | 'value' |
+   'sealed' | 'annotation' | 'data' | 'inner' | 'value' |
    'override' | 'lateinit' | 'public' | 'private' | 'internal' | 'protected' |
    'tailrec' | 'operator' | 'infix' | 'inline' | 'external' | 'suspend' |
    'const' | 'abstract' | 'final' | 'open' | 'vararg' | 'noinline' | 'crossinline' |
-   'expect' | 'actual'
+   'expect' | 'actual' | 'enum'
 ;
 
 TypeAlias :
@@ -850,6 +855,41 @@ INJECT PARSER_CLASS : {
                 || caller == "ValueArguments")
             {
                 return false;
+            }
+        }
+        return false;
+    }
+
+
+    private boolean ignoreNewlines() {
+        ListIterator<NonTerminalCall> it = stackIteratorBackward();
+        while (it.hasNext()) {
+            String caller = it.next().productionName;
+            if (caller == "ParentheticalExpression"
+                || caller == "ValueArguments"
+                || caller == "ParenthesizedType"
+                || caller == "ParenthesizedUserType"
+                || caller == "FunctionTypeParameters"
+                || caller == "ContextParameters"
+                || caller == "MultiVariableDeclaration"
+                || caller == "DestructuringVariableDeclaration"
+                || caller == "WhileStatement"
+                || caller == "DoWhileStatement"
+                || caller == "ClassParameters"
+                || caller == "Getter"
+                || caller == "Setter"
+                || caller == "FunctionValueParameters"
+                || caller == "WhenSubject"
+                || caller == "ParametersWithOptionalType"
+                || caller == "DestructuringVariableDeclaration"
+                || caller == "CollectionLiteral"
+                || caller == "DestructuringVariableDeclaration")
+            {
+                return true;
+            }
+            if (caller == "Statement")
+            {
+               return false;
             }
         }
         return false;
