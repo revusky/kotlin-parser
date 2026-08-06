@@ -745,9 +745,31 @@ Getter :
    ]
 ;
 
-Setter :
+// A separate #scan that checks that either we have a
+// simple (no params) setter or a setter with exactly one
+// parameter
+SetterLA#scan :
    [Modifiers]
-   'set' =>||
+   'set' ENSURE ~(NLs "(") =>||
+   |
+   [Modifiers]
+   'set'
+   NLs
+   "("
+   NLs
+   (
+      "_"
+      |
+      FunctionValueParameterWithOptionalType [NLs "," =>||]
+   )
+   NLs
+   ")"
+;
+
+Setter :
+   SCAN SetterLA =>
+   [Modifiers]
+   'set'
    [
       NLs
       "(" =>||
