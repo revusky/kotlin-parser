@@ -315,8 +315,14 @@ CONTEXTUAL :
 ;
 
 INJECT Literal : implements PrimaryExpression
+
 INJECT NumericalLiteral : extends Literal
-INJECT Identifier : implements PrimaryExpression
+
+INJECT Identifier : implements PrimaryExpression {
+   public boolean canBeAssignedTo() {
+      return true;
+   }
+}
 
 TOKEN #Literal :
    <TRUE : "true"> #BooleanLiteral

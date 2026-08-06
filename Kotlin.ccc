@@ -220,15 +220,15 @@ ContextParameters :
 
 #Expression#interface :
    Disjunction
-/*
-   {
-      if (!(peekNode() instanceof Expression)) {
-          System.out.println(peekNode().getType());
-          System.out.println(peekNode());
-      }
-   }*/
    {return (Expression) peekNode();}
 ;
+
+INJECT Expression :
+{
+   default boolean canBeAssignedTo() {
+      return false;
+   }
+}
 
 INJECT Disjunction : implements Expression
 INJECT Conjunction : implements Expression
@@ -237,7 +237,6 @@ INJECT Comparison : implements Expression
 INJECT GenericCallLikeComparison : implements Expression
 INJECT InfixOperation : implements Expression
 INJECT ElvisExpression : implements Expression
-INJECT PostfixUnaryExpression : implements Expression
 INJECT InfixFunctionCall : implements Expression
 INJECT ElvisExpression : implements Expression
 INJECT AdditiveExpression : implements Expression
@@ -245,7 +244,33 @@ INJECT MultiplicativeExpression : implements Expression
 INJECT AsExpression : implements Expression
 INJECT PrefixUnaryExpression : implements Expression
 INJECT RangeExpression : implements Expression
-INJECT ParenthesizedExpression : implements Expression
+INJECT CallExpression : implements Expression
+
+INJECT ParenthesizedExpression : implements Expression {
+   public boolean canBeAssignedTo() {
+      return ((Expression) get(0)).canBeAssignedTo();
+   }
+}
+
+INJECT PostfixUnaryExpression : implements Expression {
+   public boolean canBeAssignedTo() {
+      return getLastChild().getType() == EXCLAM;
+   }
+}
+
+INJECT NavigationExpression : implements Expression
+{
+   public boolean canBeAssignedTo() {
+      return getLastChild().getType() != CLASS;
+   }
+}
+
+INJECT IndexExpression : implements Expression
+{
+   public boolean canBeAssignedTo() {
+      return true;
+   }
+}
 
 INJECT PrimaryExpression : extends Expression
 INJECT IfExpression : implements PrimaryExpression
@@ -254,13 +279,20 @@ INJECT ThrowExpression : implements PrimaryExpression
 INJECT TryExpression : implements PrimaryExpression
 INJECT WhenExpression : implements PrimaryExpression
 INJECT ObjectLiteral : implements PrimaryExpression
-INJECT ThisExpression : implements PrimaryExpression
 INJECT ContinueExpression : implements PrimaryExpression
 INJECT BreakExpression : implements PrimaryExpression
 INJECT CallableReference : implements PrimaryExpression
 INJECT LambdaLiteral : implements PrimaryExpression
 INJECT CollectionLiteral : implements PrimaryExpression
 INJECT AnonymousFunction : implements PrimaryExpression
+
+INJECT ThisExpression : implements PrimaryExpression {
+   // I guess you can assign to this in Kotlin
+   // because of operator overloading.
+   public boolean canBeAssignedTo() {
+      return true;
+   }
+}
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -368,28 +400,28 @@ PostfixUnarySuffixLA#scan :
 PostfixUnarySuffix#void :
   SCAN PostfixUnarySuffixLA =>
   (
-    PostfixUnaryOperator
+    PostfixUnaryOperator #PostfixUnaryExpression(2)
     |
-    NavigationSuffix
+    (NavigationSuffix) #NavigationExpression(+1)
     |
-    CallSuffix
+    (CallSuffix) #CallExpression(+1)
     |
-    TypeArguments
+    TypeArguments #ExpressionWithTypeArgumnents(2)
     |
-    IndexingSuffix
+    (IndexingSuffix) #IndexExpression(+1)
   )
 ;
 
 PostfixUnaryOperator#void : "++" | "--" | "!" ;
 
-NavigationSuffix :
+NavigationSuffix#void :
     NLs
     MemberAccessOperator
     NLs =>||
     (<IDENTIFIER> | ParenthesizedExpression | "class")
 ;
 
-IndexingSuffix :
+IndexingSuffix#void :
     "["
     NLs
     Expression
@@ -399,7 +431,7 @@ IndexingSuffix :
     "]"
 ;
 
-CallSuffix :
+CallSuffix#void :
     [TypeArguments]
     ENSURE ("(" | (Annotation)* [Label=>||] "{" )
     =>||
@@ -768,7 +800,7 @@ SetterLA#scan :
    NLs
    ")"
    NLs
-   "{"
+   ("{" | "=")
 ;
 
 Setter :
@@ -828,11 +860,22 @@ EnumClassBody :
 
 // TODO: Deal with the lhs being assignable
 Assignment :
-    Expression
+    {
+      Expression lhs;
+      boolean isSimpleAssign = false;
+    }
+    lhs=Expression
     [
-       AssignmentOperator
+       AssignmentOperator {isSimpleAssign = getTokenType(0) == ASSIGN;}
        NLs
        Expression
+       ASSERT {!isSimpleAssign || lhs.canBeAssignedTo(),
+               lhs :
+               "Expression " + lhs
+               + " of type " + lhs.getClass().getSimpleName()
+               + "\nat " + lhs.getLocation()
+               + "\ncannot be assigned to."
+       }
     ]
 ;
 
