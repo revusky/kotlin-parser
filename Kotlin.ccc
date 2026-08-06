@@ -47,7 +47,7 @@ ImportDeclaration :
         |
         "as" <IDENTIFIER>
     ]
-    Semis
+    [Semis]
 ;
 
 UnescapedAnnotation :
@@ -474,7 +474,7 @@ LambdaLiteral :
        [Semis]
        Statement
     )*
-    NLs
+    [Semis]
     "}"
 ;
 
@@ -597,7 +597,12 @@ DoWhileStatement :
    ")"
 ;
 
-ControlStructureBody#void : Block | Statement ;
+ControlStructureBody#void :
+    ENSURE ~(LambdaLiteral)
+    Block
+    |
+    Statement
+;
 
 Block :
    "{"
