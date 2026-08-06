@@ -305,7 +305,10 @@ ElvisExpression :
 InfixFunctionCall :
     RangeExpression
     (
-      ENSURE {peekNode() != null && peekNode().getEndLine() == getToken(1).getBeginLine()}
+      ENSURE {
+         peekNode() != null
+         && peekNode().getEndLine() == getToken(1).getBeginLine()
+      }
       <IDENTIFIER>
       NLs
       RangeExpression
@@ -764,6 +767,8 @@ SetterLA#scan :
    )
    NLs
    ")"
+   NLs
+   "{"
 ;
 
 Setter :

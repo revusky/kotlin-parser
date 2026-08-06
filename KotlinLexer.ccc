@@ -117,6 +117,12 @@ TOKEN #Operator :
    |
    <QUEST : "?">
    |
+   <ELVIS : "?:"> {
+      if (charAt(matchEnd) == ':') {
+         matchedToken.truncate(1);
+      }
+   }
+   |
    <LANGLE : "<">
    |
    <RANGLE : ">">
