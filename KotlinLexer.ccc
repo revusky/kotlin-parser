@@ -339,10 +339,10 @@ TOKEN #NumericalLiteral :
    |
    <#DEC_DIGITS : <DEC_DIGIT> ((<DEC_DIGIT_OR_SEPARATOR>)* <DEC_DIGIT>)?>
    |
-   <#DOUBLE_EXPONENT : ["e","E"] ["+","-"] <DEC_DIGITS>>
+   <#DOUBLE_EXPONENT : ["e","E"] (["+","-"])? <DEC_DIGITS>>
    |
-   <DOUBLE_LITERAL : ((<DEC_DIGITS>)? "." <DEC_DIGITS> (<DOUBLE_EXPONENT>)?)
-                      | (<DEC_DIGITS><DOUBLE_EXPONENT>)>
+   <DOUBLE_LITERAL : ((<DEC_DIGITS>)? "." <DEC_DIGITS>(<DOUBLE_EXPONENT>)?)
+                     | (<DEC_DIGITS><DOUBLE_EXPONENT>)>
    |
    <FLOAT_LITERAL : (<DOUBLE_LITERAL>|<DEC_DIGITS>) ("f"|"F")>
    |
