@@ -5,6 +5,11 @@ TOKEN :
    <SHEBANG : "#!" (~["\n"])* >
    |
    <NL : "\n" | "\r\n" > #Newline
+   {
+       if (parser.canIgnoreNewlines()) {
+          matchedToken.setUnparsed(true);
+       }
+   }
 ;
 
 SKIP :
