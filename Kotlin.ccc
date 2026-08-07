@@ -193,9 +193,9 @@ DefinitelyNonNullableType :
 
 ParenthesizedUserType :
     "("
-    NLs
+    //NLs
     (UserType | ParenthesizedUserType)
-    NLs
+    //NLs
     ")"
 ;
 
@@ -975,15 +975,14 @@ INJECT PARSER_CLASS : {
                 || caller == "ContextParameters"
                 || caller == "MultiVariableDeclaration"
                 || caller == "DestructuringVariableDeclaration"
+                || caller == "IfExpression"
                 || caller == "WhileStatement"
                 || caller == "DoWhileStatement"
                 || caller == "ClassParameters"
                 || caller == "FunctionValueParameters"
                 || caller == "WhenSubject"
                 || caller == "ParametersWithOptionalType"
-                || caller == "DestructuringVariableDeclaration"
-                || caller == "CollectionLiteral"
-                || caller == "DestructuringVariableDeclaration")
+                || caller == "CollectionLiteral")
             {
                 return true;
             }
@@ -1233,7 +1232,6 @@ ParametersWithOptionalType :
 
 IfExpression :
    "if"
-   NLs
    "("
    NLs
    Expression
@@ -1253,12 +1251,10 @@ IfExpression :
 
 CollectionLiteral :
    "["
-   NLs
    [
         Expression
-        (NLs "," NLs =>|+1 Expression)*
-        [NLs "," =>||]
-        NLs
+        ("," =>|+1 Expression)*
+        [","]
    ]
    "]"
 ;
