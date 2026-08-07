@@ -937,11 +937,29 @@ INJECT PARSER_CLASS : {
         return false;
     }
 
+    private Iterator<String> stackIteratorIncludingCurrent() {
+         final Iterator<NonTerminalCall> nestedStack = stackIteratorBackward();
+         return new Iterator<String>() {
+            boolean atStart = currentLookaheadToken == null;
+            public boolean hasNext() {
+               return nestedStack.hasNext();
+            }
+            public String next() {
+               if (atStart) {
+                  atStart = false;
+                  return currentlyParsedProduction;
+               }
+               return nestedStack.next().productionName;
+            }
+         };
+    }
 
     boolean canIgnoreNewlines() {
-        ListIterator<NonTerminalCall> it = stackIteratorBackward();
+//        Iterator<NonTerminalCall> it = stackIteratorBackward();
+        Iterator<String> it = stackIteratorIncludingCurrent();
         while (it.hasNext()) {
-            String caller = it.next().productionName;
+//            String caller = it.next().productionName;
+            String caller = it.next();
             if (caller == "Statement"
                 || caller == "Block"
                 || caller == "LambdaLiteral"
