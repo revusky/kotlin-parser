@@ -286,14 +286,7 @@ INJECT CallableReference : implements PrimaryExpression
 INJECT LambdaLiteral : implements PrimaryExpression
 INJECT CollectionLiteral : implements PrimaryExpression
 INJECT AnonymousFunction : implements PrimaryExpression
-
-INJECT ThisExpression : implements PrimaryExpression {
-   // I guess you can assign to this in Kotlin
-   // because of operator overloading.
-   public boolean canBeAssignedTo() {
-      return true;
-   }
-}
+INJECT ThisExpression : implements PrimaryExpression
 
 Disjunction : Conjunction (NLs "||" =>|| NLs Conjunction)* ;
 
@@ -955,15 +948,14 @@ INJECT PARSER_CLASS : {
     }
 
     boolean canIgnoreNewlines() {
-//        Iterator<NonTerminalCall> it = stackIteratorBackward();
         Iterator<String> it = stackIteratorIncludingCurrent();
         while (it.hasNext()) {
-//            String caller = it.next().productionName;
             String caller = it.next();
             if (caller == "Statement"
                 || caller == "Block"
                 || caller == "LambdaLiteral"
-                || caller == "ClassBody")
+                || caller == "ClassBody"
+                || caller == "EnumClassBody")
             {
                return false;
             }
@@ -972,6 +964,8 @@ INJECT PARSER_CLASS : {
                 || caller == "ParenthesizedType"
                 || caller == "ParenthesizedUserType"
                 || caller == "FunctionTypeParameters"
+                || caller == "LineStrExpression"
+                || caller == "MultilineInterpolation"
                 || caller == "ContextParameters"
                 || caller == "MultiVariableDeclaration"
                 || caller == "DestructuringVariableDeclaration"
@@ -982,6 +976,7 @@ INJECT PARSER_CLASS : {
                 || caller == "FunctionValueParameters"
                 || caller == "WhenSubject"
                 || caller == "ParametersWithOptionalType"
+                || caller == "TypeParameters"
                 || caller == "CollectionLiteral")
             {
                 return true;
@@ -990,8 +985,6 @@ INJECT PARSER_CLASS : {
         return false;
     }
 }
-
-
 
 ClassMemberDeclarations : (ClassMemberDeclaration [Semis])* ;
 
@@ -1151,7 +1144,7 @@ WhenEntry :
    [NLs "if" =>||
       Expression
       ASSERT {getTokenType(1) != COMMA :
-             "Cannot have a guard condition in a comma-separated when entry"}
+             "Cannot have a guard condition in a comma-separated When entry"}
    ]
    (NLs "," =>|+1 NLs WhenCondition)*
    [NLs "," =>||]
@@ -1334,13 +1327,13 @@ MultilineStringLiteral :
 
 LineStrExpression :
     <LINE_STR_EXPRESSION_START>
-    LEXICAL_STATE KOTLIN (NLs Expression NLs "}")
+    LEXICAL_STATE KOTLIN (Expression "}")
 ;
 
 MultilineInterpolation :
    <MULT_LINE_EXPRESSION_START>
    LEXICAL_STATE KOTLIN
-   ( NLs Expression NLs "}")
+   ( Expression "}")
 ;
 
 INJECT StringLiteral : implements Expression
